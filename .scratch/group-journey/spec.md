@@ -131,7 +131,7 @@ Milestones are detected by comparing each stored snapshot with the one before it
 ### Roster and identity
 
 - `player` becomes **required** on every roster entry. Every entry is a Main; the config file has no alts. The roster order is the fixed display order everywhere.
-- History is followed **per Player**. Every stored character record already carries `player`. When a Player's Character name differs from the previous snapshot, that Player has switched Main, and the new Main starts from a Baseline.
+- History is followed **per Player**. Records from 2026-11-08 mostly lack `player`; newer records carry it. When a Player's Character name differs from the previous snapshot, that Player has switched Main, and the new Main starts from a Baseline.
 - Snapshots taken before `player` was required can be matched to a Player through the current roster by Character name.
 
 ### New character fields
@@ -179,7 +179,7 @@ A Group Milestone whose condition is already true in the first snapshot that can
 
 ### Group numbers
 
-- **Levels earned together** = for every Main ever followed, (last known level − 1), summed. A Player's previous Mains keep counting after a switch, which is what makes the number grow-only.
+- **Levels earned together** = for every Character ever recorded, (highest level seen − 1), summed. The poller only records roster Mains, so every recorded Character was a Main. Rerolled Mains, Players who left and Mains a poll missed all keep counting, which is what makes the number grow-only.
 - **Next Group Milestone** = the next multiple of 100 above Levels earned together, shown with the current value.
 - **Levels gained** (whole Group, over the last 24 hours or the available history) and **Played today** keep today's logic but are only exposed as Group totals. The view model no longer exposes per-Main "gained" numbers.
 - **The Journey chart series:** one point per snapshot with Levels earned together, plus the Group Milestones to mark on it.

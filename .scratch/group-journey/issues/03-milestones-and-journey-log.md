@@ -10,6 +10,7 @@ Parent spec: `.scratch/group-journey/spec.md` (see "Milestone rules"). Terms: `C
 
 - [ ] Milestones are derived from the stored snapshot history inside the dashboard builder and recomputed on every build. Nothing new is persisted.
 - [ ] Each Milestone has the time of the snapshot that first showed the change, a kind, and the Player and Main for Personal Milestones.
+- [ ] Main switches are detected per Player (the same Player, a different Character name than before; most records from 2026-11-08 have no `player`, so match through the roster, and remember attributions seen in later records). Tested with records that lack `player`.
 - [ ] Baseline rules, each tested through the dashboard builder:
   - The first non-null value per Player per field is a Baseline.
   - Changes are compared against the last known value.

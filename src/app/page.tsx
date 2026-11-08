@@ -1,12 +1,13 @@
 import { GroupTable } from '../components/GroupTable.tsx';
+import { JourneyChart } from '../components/JourneyChart.tsx';
 import { LocalTime } from '../components/LocalTime.tsx';
-import { buildDashboard } from '../lib/dashboard.ts';
+import { buildDashboard, GROUP_MILESTONE_STEP } from '../lib/dashboard.ts';
 import { roster } from '../lib/roster.ts';
 import { readSnapshots } from '../lib/store.ts';
 
 export default async function Page() {
   const data = buildDashboard(await readSnapshots(), roster);
-  const { stats } = data;
+  const { stats, nextGroupMilestone: next } = data;
 
   return (
     <main className="page">
@@ -43,9 +44,17 @@ export default async function Page() {
         <>
           <section className="tiles">
             <div className="tile">
-              <div className="label">Group average</div>
-              <div className="value">{stats.avgLevel.toFixed(1)}</div>
-              <div className="sub">{data.characters.length} Mains</div>
+              <div className="label">Levels earned together</div>
+              <div className="value">{data.levelsTogether}</div>
+              <div className="sub">by the whole Group since level 1</div>
+            </div>
+            <div className="tile">
+              <div className="label">Next Group Milestone</div>
+              <div className="value">{next.target}<span className="of"> levels</span></div>
+              <div className="progress" role="progressbar" aria-valuenow={data.levelsTogether} aria-valuemin={next.target - GROUP_MILESTONE_STEP} aria-valuemax={next.target}>
+                <div className="fill" style={{ width: `${((GROUP_MILESTONE_STEP - next.remaining) / GROUP_MILESTONE_STEP) * 100}%` }} />
+              </div>
+              <div className="sub">{data.levelsTogether} / {next.target} · {next.remaining} more to go, together</div>
             </div>
             <div className="tile">
               <div className="label">Levels gained</div>
@@ -59,13 +68,25 @@ export default async function Page() {
             </div>
           </section>
 
-          <section className="card">
-            <h2>Class mix</h2>
-            <p className="desc">Classes in the Group right now.</p>
-            <div className="mix">
-              {data.classMix.map((m) => (
-                <span className="chip" key={m.className}><b>{m.count}</b> {m.className}</span>
-              ))}
+          <section className="grid">
+            <div className="card">
+              <h2>The Journey</h2>
+              <p className="desc">Levels earned together since tracking started. Every level anyone earns lifts the line.</p>
+              {data.journey.length >= 2 ? (
+                <JourneyChart data={data.journey} />
+              ) : (
+                <div className="note">The Journey line starts building with each poll. Check back after a few hours of play.</div>
+              )}
+            </div>
+
+            <div className="card">
+              <h2>Class mix</h2>
+              <p className="desc">Classes in the Group right now.</p>
+              <div className="mix">
+                {data.classMix.map((m) => (
+                  <span className="chip" key={m.className}><b>{m.count}</b> {m.className}</span>
+                ))}
+              </div>
             </div>
           </section>
 
