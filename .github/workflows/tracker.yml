@@ -1,0 +1,78 @@
+name: Poll armory & deploy
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # GitHub may run scheduled jobs a few minutes late
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tracker
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Poll the armory
+        run: npm run poll
+        env:
+          DATA_SOURCE: armory
+          BNET_REGION: eu
+      - name: Commit new snapshot
+        id: commit
+        run: |
+          if git diff --quiet -- data/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/snapshots.json
+          git commit -m "Snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: poll
+    # Rebuild only when there is new data, or on code/roster pushes and manual runs.
+    if: needs.poll.outputs.changed == 'true' || github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main # includes the snapshot the poll job just pushed
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - id: pages
+        uses: actions/configure-pages@v5
+      - run: npm run build
+        env:
+          NEXT_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: out
+      - id: deployment
+        uses: actions/deploy-pages@v4
