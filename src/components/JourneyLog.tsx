@@ -11,7 +11,12 @@ function Entry({ m }: { m: Milestone }) {
         {m.text}
         {'character' in m && <span className="muted"> · {m.character}</span>}
       </span>
-      <span className="when"><LocalTime ts={m.at} mode="datetime" /></span>
+      <span className="when">
+        {/* A recorded Milestone only knows its day: show the date, no time. */}
+        {'day' in m && m.day
+          ? <time dateTime={m.day}>{new Date(m.at).toLocaleDateString('en-GB', { dateStyle: 'medium', timeZone: 'UTC' })}</time>
+          : <LocalTime ts={m.at} mode="datetime" />}
+      </span>
     </li>
   );
 }

@@ -24,6 +24,8 @@ export interface JourneyPoint {
 
 interface PersonalMilestone {
   at: number;
+  /** Set on a recorded Milestone: only its day is known (YYYY-MM-DD), and `at` is midday UTC of it. */
+  day?: string;
   player: string;
   character: string;
   text: string;
@@ -168,6 +170,36 @@ export function milestonesOver(
 
   // Newest first. Within one snapshot, later-detected Milestones (e.g. level 30 after 20) come first too.
   return found.reverse().sort((a, b) => b.at - a.at);
+}
+
+/**
+ * A Milestone from before the tracker could see it (so its first sighting was a quiet Baseline), written down by hand
+ * in config/recorded-milestones.json. Only the day is known.
+ */
+export interface RecordedMilestone {
+  day: string;
+  player: string;
+  kind: 'gear';
+  quality: (typeof GEAR_FIRSTS)[number];
+}
+
+/**
+ * The detected Milestones with the recorded ones added, newest first. A recorded first replaces the same first
+ * detected later, so it's never told twice.
+ */
+export function withRecorded(milestones: Milestone[], recorded: RecordedMilestone[], roster: RosterEntry[]): Milestone[] {
+  const added: Milestone[] = recorded.map((r) => {
+    const main = roster.find((e) => e.player === r.player);
+    if (!main) throw new Error(`recorded Milestone for "${r.player}", who has no Main in the roster`);
+    const [y, m, d] = r.day.split('-').map(Number);
+    return {
+      at: Date.UTC(y, m - 1, d, 12), day: r.day, kind: r.kind, player: r.player, character: main.name,
+      quality: r.quality, text: `${r.player} equipped their first ${r.quality} item`,
+    };
+  });
+  const isRecorded = (m: Milestone) =>
+    m.kind === 'gear' && recorded.some((r) => r.player === m.player && r.quality === m.quality);
+  return [...milestones.filter((m) => !isRecorded(m)), ...added].sort((a, b) => b.at - a.at);
 }
 
 /** Group Milestones placed on the Journey line, oldest first. */

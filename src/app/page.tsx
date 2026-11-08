@@ -4,11 +4,11 @@ import { JourneyChart } from '../components/JourneyChart.tsx';
 import { JourneyLog } from '../components/JourneyLog.tsx';
 import { LocalTime } from '../components/LocalTime.tsx';
 import { buildDashboard, GROUP_MILESTONE_STEP } from '../lib/dashboard.ts';
-import { roster } from '../lib/roster.ts';
+import { recordedMilestones, roster } from '../lib/roster.ts';
 import { readSnapshots } from '../lib/store.ts';
 
 export default async function Page() {
-  const data = buildDashboard(await readSnapshots(), roster);
+  const data = buildDashboard(await readSnapshots(), roster, recordedMilestones);
   const { stats, nextGroupMilestone: next } = data;
 
   return (

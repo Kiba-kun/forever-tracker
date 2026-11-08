@@ -610,3 +610,34 @@ describe('Milestones from reputation, achievements and mounts', () => {
     assert.deepEqual(groupTexts(data), []);
   });
 });
+
+describe('Recorded Milestones: moments from before the tracker could see them', () => {
+  const rare = (player: string, day: string) => ({ day, player, kind: 'gear' as const, quality: 'Rare' as const });
+
+  it('puts a recorded first Rare in the Journey log on its day, told like a detected one', () => {
+    const data = buildDashboard(
+      [
+        snapshot(T0, [main('Horizontally Blessed', 19, { gearQuality: 'Rare' })]),
+        snapshot(T0 + HOUR, [main('Horizontally Blessed', 20, { gearQuality: 'Rare' })]),
+      ],
+      roster,
+      [rare('Andrii', '2026-11-07')],
+    );
+    assert.deepEqual(data.milestones.map((m) => m.text), ['Andrii reached level 20', 'Andrii equipped their first Rare item']);
+    assert.deepEqual(data.milestones[1], {
+      at: Date.UTC(2026, 10, 7, 12), day: '2026-11-07', kind: 'gear', player: 'Andrii', character: 'Horizontally Blessed',
+      quality: 'Rare', text: 'Andrii equipped their first Rare item',
+    });
+  });
+
+  it('does not announce a recorded first again when the snapshots also show it happening', () => {
+    const andrii = (gearQuality: CharacterState['gearQuality']) => main('Horizontally Blessed', 20, { gearQuality });
+    const data = buildDashboard(
+      [snapshot(T0, [andrii('Uncommon')]), snapshot(T0 + HOUR, [andrii('Epic')])],
+      roster,
+      [rare('Andrii', '2026-11-07')],
+    );
+    assert.deepEqual(data.milestones.map((m) => m.text), ['Andrii equipped their first Epic item', 'Andrii equipped their first Rare item']);
+    assert.equal(data.milestones[1].at, Date.UTC(2026, 10, 7, 12));
+  });
+});

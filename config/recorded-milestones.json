@@ -1,0 +1,8 @@
+{
+  "_comment": "Milestones from before the tracker could see them: their first sighting was a quiet Baseline, so they're written down here by hand. 'day' is YYYY-MM-DD; 'player' must have a Main in roster.json. Only first Rare/Epic items ('kind': 'gear') for now.",
+  "milestones": [
+    { "day": "2026-11-07", "player": "Andrii", "kind": "gear", "quality": "Rare" },
+    { "day": "2026-11-07", "player": "Roman", "kind": "gear", "quality": "Rare" },
+    { "day": "2026-11-07", "player": "Pavlo", "kind": "gear", "quality": "Rare" }
+  ]
+}
