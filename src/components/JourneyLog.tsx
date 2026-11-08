@@ -21,7 +21,8 @@ export function JourneyLog({ milestones }: { milestones: Milestone[] }) {
   if (milestones.length === 0) {
     return (
       <div className="note">
-        No Milestones yet. Level-ups, new specs and profession tiers will show up here as the Group plays.
+        No Milestones yet. Level-ups, new specs, profession tiers, first Rare and Epic items and honor ranks will show
+        up here as the Group plays.
       </div>
     );
   }

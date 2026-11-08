@@ -3,7 +3,7 @@
 // character name and point in time, so seeded history and later polls agree.
 
 import type { CharacterProfileSummary, NamedRef } from '../blizzard/types.ts';
-import { MAX_LEVEL, XP_TO_NEXT_LEVEL, normalize, type RosterEntry } from '../model.ts';
+import { MAX_LEVEL, XP_TO_NEXT_LEVEL, normalize, type CharacterState, type RosterEntry } from '../model.ts';
 import type { CharacterSource } from './types.ts';
 
 /** WoW Forever global launch: 2026-11-04 15:00 PST. */
@@ -84,9 +84,24 @@ export function mockProfile(entry: RosterEntry, at: number): CharacterProfileSum
   };
 }
 
+/**
+ * The armory-only summaries, in the same shape the armory source stores them. They only ever improve with level,
+ * so seeded history tells a believable story: a first Rare in the teens or twenties, a first Epic near 60, and
+ * honor ranks for the Mains who like PvP once they're past 30.
+ */
+function mockGearAndHonor(name: string, level: number): Pick<CharacterState, 'gearQuality' | 'honorRank'> {
+  const rareAt = 14 + Math.floor(hash(name + ':rare') * 12);
+  const epicAt = 48 + Math.floor(hash(name + ':epic') * 12);
+  const gearQuality = level >= epicAt ? 'Epic' : level >= rareAt ? 'Rare' : level >= 6 ? 'Uncommon' : 'Common';
+  const pvp = hash(name + ':pvp');
+  const honorRank = level <= 30 || pvp < 0.3 ? 0 : Math.min(14, Math.floor(((level - 30) / 4) * pvp));
+  return { gearQuality, honorRank };
+}
+
 export const mockSource: CharacterSource = {
   kind: 'mock',
   async fetchCharacter(entry, at) {
-    return normalize(entry, mockProfile(entry, at), null);
+    const state = normalize(entry, mockProfile(entry, at), null);
+    return { ...state, ...mockGearAndHonor(entry.name, state.level) };
   },
 };

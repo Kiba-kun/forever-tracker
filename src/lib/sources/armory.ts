@@ -7,7 +7,7 @@
 
 import { nameSlug } from '../blizzard/client.ts';
 import type { FactionType } from '../blizzard/types.ts';
-import { xpToNext, type CharacterState, type RosterEntry } from '../model.ts';
+import { GEAR_QUALITIES, betterGear, xpToNext, type CharacterState, type GearQuality, type RosterEntry } from '../model.ts';
 import type { CharacterSource } from './types.ts';
 
 const MARKER = 'var characterProfileInitialState = ';
@@ -42,7 +42,9 @@ export interface ArmoryCharacter {
   guild?: { name: string } | null;
   specs?: { name: string; spentPoints?: number; active?: boolean }[];
   professions?: { primaries?: { name: string; tiers: ProfessionTier[] }[]; secondaries?: { name: string; tiers: ProfessionTier[] }[] };
-  pvp?: { honorableKills?: { value: number } };
+  /** Equipped items by slot. */
+  gear?: Record<string, { quality?: { type: string } }>;
+  pvp?: { honorableKills?: { value: number }; rank?: { value: number } };
 }
 
 export function armoryUrl(entry: RosterEntry) {
@@ -102,7 +104,18 @@ export function armoryToState(entry: RosterEntry, c: ArmoryCharacter): Character
     spec: spec && (spec.spentPoints ?? 0) > 0 ? spec.name : null,
     professions,
     honorableKills: c.pvp?.honorableKills?.value ?? null,
+    gearQuality: bestQuality(c.gear),
+    honorRank: c.pvp?.rank?.value ?? null,
   };
+}
+
+/** Best quality among equipped items, or null when nothing equipped has a quality we know. */
+function bestQuality(gear: ArmoryCharacter['gear']): GearQuality | null {
+  let best: GearQuality | undefined;
+  for (const item of Object.values(gear ?? {})) {
+    best = betterGear(best, GEAR_QUALITIES.find((q) => q.toUpperCase() === item.quality?.type));
+  }
+  return best ?? null;
 }
 
 export const armorySource: CharacterSource = {

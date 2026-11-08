@@ -332,6 +332,82 @@ describe('Milestones', () => {
     );
     assert.deepEqual(texts(data), []);
   });
+
+  it('marks a Main equipping their first Rare and first Epic item, after a quiet Baseline', () => {
+    const andrii = (gearQuality?: CharacterState['gearQuality']) =>
+      main('Horizontally Blessed', 20, gearQuality === undefined ? {} : { gearQuality });
+    const data = buildDashboard(
+      [
+        snapshot(T0, [andrii()]), // before the poller read gear: unknown
+        snapshot(T0 + HOUR, [andrii('Uncommon')]), // Baseline
+        snapshot(T0 + 2 * HOUR, [andrii('Rare')]),
+        snapshot(T0 + 3 * HOUR, [andrii(null)]), // unknown again: nothing
+        snapshot(T0 + 4 * HOUR, [andrii('Uncommon')]), // swapped the Rare out
+        snapshot(T0 + 5 * HOUR, [andrii('Rare')]), // not the first Rare
+        snapshot(T0 + 6 * HOUR, [andrii('Epic')]),
+        snapshot(T0 + 7 * HOUR, [andrii('Legendary')]), // no Milestone of its own
+      ],
+      roster,
+    );
+    assert.deepEqual(data.milestones.filter((m) => m.kind === 'gear'), [
+      { at: T0 + 6 * HOUR, kind: 'gear', player: 'Andrii', character: 'Horizontally Blessed', quality: 'Epic', text: 'Andrii equipped their first Epic item' },
+      { at: T0 + 2 * HOUR, kind: 'gear', player: 'Andrii', character: 'Horizontally Blessed', quality: 'Rare', text: 'Andrii equipped their first Rare item' },
+    ]);
+  });
+
+  it('marks both gear firsts when a Main goes from Uncommon straight to Epic between polls', () => {
+    const vlad = (gearQuality: CharacterState['gearQuality']) => main('Ignatius Perdun', 20, { gearQuality });
+    const data = buildDashboard([snapshot(T0, [vlad('Uncommon')]), snapshot(T0 + HOUR, [vlad('Epic')])], roster);
+    assert.deepEqual(texts(data), ['Vlad equipped their first Epic item', 'Vlad equipped their first Rare item']);
+  });
+
+  it('announces no gear first a Main already had at its Baseline', () => {
+    const vlad = (gearQuality: CharacterState['gearQuality']) => main('Ignatius Perdun', 20, { gearQuality });
+    const data = buildDashboard([snapshot(T0, [vlad('Rare')]), snapshot(T0 + HOUR, [vlad('Rare')])], roster);
+    assert.deepEqual(texts(data), []);
+  });
+
+  it('marks a Main\'s honor rank going up, after a quiet Baseline', () => {
+    const max = (honorRank?: number | null) => main('Wheredem Hosat', 40, honorRank === undefined ? {} : { honorRank });
+    const data = buildDashboard(
+      [
+        snapshot(T0, [max()]), // before the poller read honor rank: unknown
+        snapshot(T0 + HOUR, [max(2)]), // Baseline
+        snapshot(T0 + 2 * HOUR, [max(null)]), // unknown again: nothing
+        snapshot(T0 + 3 * HOUR, [max(2)]),
+        snapshot(T0 + 4 * HOUR, [max(4)]), // two ranks between polls: each one is marked
+      ],
+      roster,
+    );
+    assert.deepEqual(data.milestones, [
+      { at: T0 + 4 * HOUR, kind: 'honor-rank', player: 'Max', character: 'Wheredem Hosat', rank: 4, text: 'Max reached honor rank 4' },
+      { at: T0 + 4 * HOUR, kind: 'honor-rank', player: 'Max', character: 'Wheredem Hosat', rank: 3, text: 'Max reached honor rank 3' },
+    ]);
+  });
+
+  it('marks every honor rank gained, including the first', () => {
+    const andrii = (honorRank: number) => main('Horizontally Blessed', 40, { honorRank });
+    const data = buildDashboard([snapshot(T0, [andrii(0)]), snapshot(T0 + HOUR, [andrii(1)]), snapshot(T0 + 2 * HOUR, [andrii(2)])], roster);
+    assert.deepEqual(texts(data), ['Andrii reached honor rank 2', 'Andrii reached honor rank 1']);
+  });
+
+  it('marks an honor rank again when it is regained after decaying, since it is compared with the last known rank', () => {
+    const andrii = (honorRank: number) => main('Horizontally Blessed', 40, { honorRank });
+    const data = buildDashboard([snapshot(T0, [andrii(4)]), snapshot(T0 + HOUR, [andrii(3)]), snapshot(T0 + 2 * HOUR, [andrii(4)])], roster);
+    assert.deepEqual(texts(data), ['Andrii reached honor rank 4']);
+  });
+
+  it('starts a rerolled Main\'s gear and honor rank from a Baseline', () => {
+    const data = buildDashboard(
+      [
+        snapshot(T0, [main('Wheredem Hosat', 30, { gearQuality: 'Uncommon', honorRank: 1 })]),
+        snapshot(T0 + HOUR, [main('Fresh Start', 30, { player: 'Max', gearQuality: 'Epic', honorRank: 5 })]),
+        snapshot(T0 + 2 * HOUR, [main('Fresh Start', 30, { player: 'Max', gearQuality: 'Epic', honorRank: 5 })]),
+      ],
+      afterMaxRerolls,
+    );
+    assert.deepEqual(texts(data), []);
+  });
 });
 
 describe('Dungeon suggestions', () => {

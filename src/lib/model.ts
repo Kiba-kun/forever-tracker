@@ -18,6 +18,16 @@ export interface RosterEntry {
   realmSegment?: string;
 }
 
+/** Item quality, worst to best. */
+export const GEAR_QUALITIES = ['Poor', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'] as const;
+export type GearQuality = (typeof GEAR_QUALITIES)[number];
+
+/** The better of two qualities; an unknown one never wins. */
+export function betterGear(a: GearQuality | null | undefined, b: GearQuality | null | undefined): GearQuality | undefined {
+  if (!a || !b) return a ?? b ?? undefined;
+  return GEAR_QUALITIES.indexOf(a) >= GEAR_QUALITIES.indexOf(b) ? a : b;
+}
+
 export interface CharacterState {
   name: string;
   player?: string;
@@ -40,6 +50,10 @@ export interface CharacterState {
   spec?: string | null;
   professions?: { name: string; skill: number; max: number; primary: boolean }[];
   honorableKills?: number | null;
+  /** Best quality among equipped items (armory only). Missing or `null`: unknown, e.g. snapshots from before it was read. */
+  gearQuality?: GearQuality | null;
+  /** PvP honor rank, 0 before the first rank (armory only). Missing or `null`: unknown. */
+  honorRank?: number | null;
 }
 
 export type SourceKind = 'mock' | 'blizzard' | 'armory';

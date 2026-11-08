@@ -2,7 +2,7 @@
 // The armory keeps no history, so this is the only record of them. Recomputed from the full snapshot history on
 // every build, so fixing a rule here also fixes the past. Terms (Milestone, Baseline, Main...) are in CONTEXT.md.
 
-import type { CharacterState, RosterEntry, Snapshot } from './model.ts';
+import { betterGear, type CharacterState, type GearQuality, type RosterEntry, type Snapshot } from './model.ts';
 
 const LEVEL_MILESTONES = [10, 20, 30, 40, 50, 60];
 /** Profession tiers by the skill cap they unlock (original-era game). Apprentice (75) is not a Milestone. */
@@ -11,6 +11,8 @@ const PROFESSION_TIERS = [
   { tier: 'Expert', cap: 225 },
   { tier: 'Artisan', cap: 300 },
 ] as const;
+/** Gear qualities whose first equipped item is a Milestone. */
+const GEAR_FIRSTS = ['Rare', 'Epic'] as const satisfies readonly GearQuality[];
 
 /** Levels earned together after one snapshot. */
 export interface JourneyPoint {
@@ -34,6 +36,8 @@ export type Milestone =
   | (PersonalMilestone & { kind: 'level'; level: number })
   | (PersonalMilestone & { kind: 'spec'; spec: string; previous: string | null })
   | (PersonalMilestone & { kind: 'profession'; profession: string; tier: (typeof PROFESSION_TIERS)[number]['tier'] })
+  | (PersonalMilestone & { kind: 'gear'; quality: (typeof GEAR_FIRSTS)[number] })
+  | (PersonalMilestone & { kind: 'honor-rank'; rank: number })
   | (GroupMilestone & { kind: 'levels-together'; levelsTogether: number })
   | (GroupMilestone & { kind: 'whole-group-level'; level: number });
 
@@ -52,6 +56,10 @@ interface MainState {
   spec: string | null | undefined;
   /** Highest skill cap seen per profession. A profession missing from one report keeps its cap. */
   professionCaps: Map<string, number> | undefined;
+  /** Best gear quality ever equipped: "first Rare" means first ever, so swapping a Rare out and back is quiet. */
+  bestGear: GearQuality | undefined;
+  /** Last known honor rank. */
+  honorRank: number | undefined;
 }
 
 /**
@@ -149,6 +157,8 @@ function remember(before: MainState | undefined, now: CharacterState): MainState
     level: now.level,
     spec: now.spec === undefined || (now.spec === null && before?.spec) ? before?.spec : now.spec,
     professionCaps,
+    bestGear: betterGear(before?.bestGear, now.gearQuality),
+    honorRank: now.honorRank ?? before?.honorRank,
   };
 }
 
@@ -171,6 +181,23 @@ function personalMilestones(at: number, player: string, before: MainState, now: 
           found.push({ ...who, kind: 'profession', profession: p.name, tier, text: `${player} reached ${tier} in ${p.name}` });
         }
       }
+    }
+  }
+
+  // Jumping past both between two polls marks both, like level thresholds.
+  if (before.bestGear !== undefined && now.gearQuality != null) {
+    for (const first of GEAR_FIRSTS) {
+      const reachedNow = betterGear(now.gearQuality, first) === now.gearQuality;
+      const hadBefore = betterGear(before.bestGear, first) === before.bestGear;
+      if (reachedNow && !hadBefore) {
+        found.push({ ...who, kind: 'gear', quality: first, text: `${player} equipped their first ${first} item` });
+      }
+    }
+  }
+
+  if (before.honorRank !== undefined && now.honorRank != null) {
+    for (let rank = before.honorRank + 1; rank <= now.honorRank; rank++) {
+      found.push({ ...who, kind: 'honor-rank', rank, text: `${player} reached honor rank ${rank}` });
     }
   }
 
