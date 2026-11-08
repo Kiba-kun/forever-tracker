@@ -126,7 +126,7 @@ Milestones are detected by comparing each stored snapshot with the one before it
 ### Shape of the work
 
 - **No separate events store.** Milestones, Baselines, Levels earned together, the Journey chart series and Dungeon suggestions are all derived from the snapshot history that's already stored, at build time, inside the dashboard builder. The stored history stays the only source of truth.
-- **Recorded Milestones (decided 2026-11-08):** a Milestone the Group reached before the tracker could see it (so its first sighting was a Baseline) can be written down by hand in `config/recorded-milestones.json`. The builder takes these as a third input and merges them into the Journey log. They're dated by day only, and a recorded first replaces the same first if it's detected later. This was first used for the Rare items Andrii, Roman and Pavlo got from a dungeon on 2026-11-07. Only gear firsts are supported for now.
+- **Recorded Milestones (decided 2026-11-08):** a Milestone the Group reached before the tracker could see it (so its first sighting was a Baseline) can be written down by hand in `config/recorded-milestones.json`. The builder takes these as a third input and merges them into the Journey log. They're dated by day only, and a recorded first replaces the same first if it's detected later. This was first used for the Rare items Andrii, Vlad, Roman and Pavlo got from a dungeon on 2026-11-07. Only gear firsts are supported for now.
 - The dashboard builder keeps its role: snapshot history plus the roster in, the page's view model out. It stays a pure function. Milestone detection and Dungeon suggestions can be separate modules behind it, but the builder is the interface the page and the tests use.
 
 ### Roster and identity
