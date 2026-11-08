@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { buildDashboard } from './dashboard.ts';
-import type { CharacterState, RosterEntry, Snapshot } from './model.ts';
+import type { CharacterState, EquippedItem, RosterEntry, Snapshot } from './model.ts';
 
 const HOUR = 3_600_000;
 const T0 = Date.UTC(2026, 10, 8, 12);
@@ -361,6 +361,36 @@ describe('Milestones', () => {
     assert.deepEqual(texts(data), ['Vlad equipped their first Epic item', 'Vlad equipped their first Rare item']);
   });
 
+  it('names the items of that Quality that earned each gear first', () => {
+    const wand: EquippedItem = { id: 279896, name: 'Deepblaze', quality: 'Rare', icon: 'https://render.example/135473.jpg' };
+    const cloak: EquippedItem = { id: 9779, name: 'Bandit Cloak of Stamina', quality: 'Uncommon', icon: null, bonus: [12731] };
+    const hammer: EquippedItem = { id: 11684, name: 'Ironfoe', quality: 'Epic', icon: null };
+    const boots: EquippedItem = { id: 252425, name: 'Dark Leather Boots', quality: 'Rare', icon: null };
+    const vlad = (gearQuality: CharacterState['gearQuality'], gear: CharacterState['gear']) =>
+      main('Ignatius Perdun', 20, { gearQuality, gear });
+    const data = buildDashboard(
+      [snapshot(T0, [vlad('Uncommon', [cloak])]), snapshot(T0 + HOUR, [vlad('Epic', [cloak, wand, hammer, boots])])],
+      roster,
+    );
+    assert.deepEqual(
+      data.milestones.map((m) => [m.text, m.kind === 'gear' ? m.items?.map((i) => i.name) : undefined]),
+      [
+        ['Vlad equipped their first Epic item', ['Ironfoe']],
+        ['Vlad equipped their first Rare item', ['Deepblaze', 'Dark Leather Boots']],
+      ],
+    );
+  });
+
+  it('names no items for a gear first when none of that Quality is equipped any more', () => {
+    const cloak: EquippedItem = { id: 9779, name: 'Bandit Cloak of Stamina', quality: 'Uncommon', icon: null };
+    const hammer: EquippedItem = { id: 11684, name: 'Ironfoe', quality: 'Epic', icon: null };
+    const vlad = (gearQuality: CharacterState['gearQuality'], gear: CharacterState['gear']) =>
+      main('Ignatius Perdun', 20, { gearQuality, gear });
+    const data = buildDashboard([snapshot(T0, [vlad('Uncommon', [cloak])]), snapshot(T0 + HOUR, [vlad('Epic', [hammer])])], roster);
+    const rare = data.milestones.find((m) => m.kind === 'gear' && m.quality === 'Rare');
+    assert.equal(rare && 'items' in rare, false);
+  });
+
   it('announces no gear first a Main already had at its Baseline', () => {
     const vlad = (gearQuality: CharacterState['gearQuality']) => main('Ignatius Perdun', 20, { gearQuality });
     const data = buildDashboard([snapshot(T0, [vlad('Rare')]), snapshot(T0 + HOUR, [vlad('Rare')])], roster);
@@ -533,6 +563,18 @@ describe('Milestones from reputation, achievements and mounts', () => {
       [T0 + 3 * HOUR, 'mount', 'Vlad got their first mount'],
       [T0 + 3 * HOUR, 'dungeon-achievement', 'Vlad earned their first dungeon achievement'],
     ]);
+  });
+
+  it('names the mount a Main got as their first, with its Quality', () => {
+    const vlad = (mounts: number, collectedMounts: CharacterState['collectedMounts']) => main('Ignatius Perdun', 40, { mounts, collectedMounts });
+    const data = buildDashboard(
+      [snapshot(T0, [vlad(0, [])]), snapshot(T0 + HOUR, [vlad(1, [{ name: 'Black Battlestrider', quality: 'Common' }])])],
+      roster,
+    );
+    assert.deepEqual(
+      data.milestones.map((m) => [m.text, m.kind === 'mount' ? m.mounts : undefined]),
+      [['Vlad got their first mount', [{ name: 'Black Battlestrider', quality: 'Common' }]]],
+    );
   });
 
   it('announces no first a Main already had at its Baseline', () => {

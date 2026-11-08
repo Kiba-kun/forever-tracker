@@ -14,8 +14,8 @@ export interface DashboardData {
   source: Snapshot['source'] | null;
   updatedAt: number | null;
   errors: Snapshot['errors'];
-  /** Mains in roster order, each with its Player. `slot` is the roster index and drives the Main's colour. */
-  characters: (CharacterState & { player: string; slot: number })[];
+  /** Mains in roster order, each with its Player. */
+  characters: (CharacterState & { player: string })[];
   /** Levels earned together: every level the Group's Mains gained since level 1. */
   levelsTogether: number;
   /** The next Group Milestone in Levels earned together, and how many levels are left to reach it. */
@@ -35,7 +35,6 @@ export interface DashboardData {
     /** Hours of history available. */
     historyHours: number;
   };
-  classMix: { className: string; count: number }[];
 }
 
 /**
@@ -49,7 +48,7 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[], rec
     return {
       source: null, updatedAt: null, errors: [], characters: [], levelsTogether: 0,
       nextGroupMilestone: nextGroupMilestoneAfter(0), journey: [], milestones: withRecorded([], recorded, roster), journeyMarkers: [], dungeonSuggestions: [],
-      stats: { groupGained24h: 0, activeToday: 0, historyHours: 0 }, classMix: [],
+      stats: { groupGained24h: 0, activeToday: 0, historyHours: 0 },
     };
   }
 
@@ -59,7 +58,7 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[], rec
     .map((c) => ({ c, slot: roster.findIndex((r) => r.name === c.name) }))
     .filter(({ slot }) => slot !== -1)
     .sort((a, b) => a.slot - b.slot)
-    .map(({ c, slot }) => ({ ...c, player: roster[slot].player, slot }));
+    .map(({ c, slot }) => ({ ...c, player: roster[slot].player }));
 
   // Compare with the newest snapshot that is at least 24h older than the latest.
   const cutoff = latest.takenAt - DAY;
@@ -73,9 +72,6 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[], rec
   const journey = journeyOver(snapshots);
   const levelsTogether = journey.at(-1)!.levelsTogether;
   const milestones = withRecorded(milestonesOver(snapshots, roster, journey, GROUP_MILESTONE_STEP), recorded, roster);
-
-  const mix = new Map<string, number>();
-  for (const c of characters) mix.set(c.className, (mix.get(c.className) ?? 0) + 1);
 
   return {
     source: latest.source,
@@ -93,7 +89,6 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[], rec
       activeToday: characters.filter((c) => latest.takenAt - c.lastLogin < DAY).length,
       historyHours: (latest.takenAt - snapshots[0].takenAt) / HOUR,
     },
-    classMix: [...mix].map(([className, count]) => ({ className, count })).sort((a, b) => b.count - a.count),
   };
 }
 

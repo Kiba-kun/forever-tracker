@@ -7,7 +7,7 @@
 
 import { nameSlug } from '../blizzard/client.ts';
 import type { FactionType } from '../blizzard/types.ts';
-import { GEAR_QUALITIES, STANDINGS, betterGear, xpToNext, type CharacterState, type GearQuality, type RosterEntry, type Standing } from '../model.ts';
+import { GEAR_QUALITIES, STANDINGS, betterGear, xpToNext, type CharacterState, type EquippedItem, type GearQuality, type RosterEntry, type Standing } from '../model.ts';
 import type { CharacterSource } from './types.ts';
 
 const MARKER = 'var characterProfileInitialState = ';
@@ -23,6 +23,14 @@ interface ProfessionTier {
   name: string;
   skillPoints: number;
   maxSkillPoints: number;
+}
+
+interface ArmoryItem {
+  item?: { id: number };
+  name?: string;
+  quality?: { type: string };
+  media?: { content?: { assets?: { key: string; value: string }[] } };
+  bonus_list?: number[];
 }
 
 /** The subset of the armory page's character object we use. */
@@ -43,7 +51,7 @@ export interface ArmoryCharacter {
   specs?: { name: string; spentPoints?: number; active?: boolean }[];
   professions?: { primaries?: { name: string; tiers: ProfessionTier[] }[]; secondaries?: { name: string; tiers: ProfessionTier[] }[] };
   /** Equipped items by slot. */
-  gear?: Record<string, { quality?: { type: string } }>;
+  gear?: Record<string, ArmoryItem>;
   pvp?: { honorableKills?: { value: number }; rank?: { value: number } };
 }
 
@@ -58,7 +66,7 @@ type SubPage = keyof typeof SUB_PAGES;
 
 /** Each sub-page's HTML, or why it couldn't be fetched. */
 export type ArmorySubPages = Record<SubPage, string | Error>;
-type SubPageSummaries = Pick<CharacterState, SubPage>;
+type SubPageSummaries = Pick<CharacterState, SubPage | 'collectedMounts'>;
 
 /** The page's embedded state object. */
 function embeddedState(html: string): Record<string, unknown> {
@@ -117,17 +125,33 @@ export function armoryToState(entry: RosterEntry, c: ArmoryCharacter): Character
     professions,
     honorableKills: c.pvp?.honorableKills?.value ?? null,
     gearQuality: bestQuality(c.gear),
+    gear: c.gear ? equippedItems(c.gear) : null,
     honorRank: c.pvp?.rank?.value ?? null,
   };
+}
+
+/** The value of `list` whose upper-cased name is the armory's enum `raw` (e.g. 'RARE' → 'Rare'). */
+function fromEnum<T extends string>(list: readonly T[], raw: string | undefined): T | undefined {
+  return list.find((v) => v.toUpperCase() === raw);
 }
 
 /** Best quality among equipped items, or null when nothing equipped has a quality we know. */
 function bestQuality(gear: ArmoryCharacter['gear']): GearQuality | null {
   let best: GearQuality | undefined;
   for (const item of Object.values(gear ?? {})) {
-    best = betterGear(best, GEAR_QUALITIES.find((q) => q.toUpperCase() === item.quality?.type));
+    best = betterGear(best, fromEnum(GEAR_QUALITIES, item.quality?.type));
   }
   return best ?? null;
+}
+
+/** Every equipped item we can name, in page slot order. Items with a Quality we don't know are left out. */
+function equippedItems(gear: Record<string, ArmoryItem>): EquippedItem[] {
+  return Object.values(gear).flatMap((it) => {
+    const quality = fromEnum(GEAR_QUALITIES, it.quality?.type);
+    if (!it.item?.id || !it.name || !quality) return [];
+    const icon = it.media?.content?.assets?.find((a) => a.key === 'icon')?.value ?? null;
+    return [{ id: it.item.id, name: it.name, quality, icon, ...(it.bonus_list?.length ? { bonus: it.bonus_list } : {}) }];
+  });
 }
 
 interface ReputationNode {
@@ -144,7 +168,7 @@ function reputationSummary(html: string): NonNullable<CharacterState['reputation
   const visit = (nodes: ReputationNode[]) => {
     for (const r of nodes) {
       if (r.standingType) {
-        const standing = STANDINGS.find((s) => s.toUpperCase() === r.standingType?.enum);
+        const standing = fromEnum(STANDINGS, r.standingType?.enum);
         if (!r.name || !standing) throw new Error(`unknown standing "${r.standingType.enum}" with "${r.name}"`);
         found.push({ faction: r.name, standing });
       }
@@ -163,6 +187,18 @@ function achievementsSummary(html: string): NonNullable<CharacterState['achievem
     return n;
   };
   return { dungeons: count('dungeons'), raids: count('raids') };
+}
+
+/** Collected mounts by name and Quality, in page order. */
+function collectedMounts(html: string): NonNullable<CharacterState['collectedMounts']> {
+  const list = (embeddedState(html).mounts as { mounts?: { name?: string; quality?: { enum?: string }; collected?: boolean }[] } | undefined)?.mounts;
+  if (!Array.isArray(list)) throw new Error('no mount list (page format changed?)');
+  return list.flatMap((m) => {
+    if (!m.collected) return [];
+    const quality = fromEnum(GEAR_QUALITIES, m.quality?.enum);
+    if (!m.name || !quality) throw new Error(`unreadable collected mount "${m.name}"`);
+    return [{ name: m.name, quality }];
+  });
 }
 
 function mountsSummary(html: string): number {
@@ -187,10 +223,15 @@ export function readSubPages(pages: ArmorySubPages): { summaries: SubPageSummari
       return null;
     }
   };
-  const summaries = {
-    reputation: read('reputation', reputationSummary),
-    achievements: read('achievements', achievementsSummary),
-    mounts: read('mounts', mountsSummary),
+  const reputation = read('reputation', reputationSummary);
+  const achievements = read('achievements', achievementsSummary);
+  // One read of the mounts page for both its summaries, so a bad page is reported once.
+  const mounts = read('mounts', (html) => ({ count: mountsSummary(html), collected: collectedMounts(html) }));
+  const summaries: SubPageSummaries = {
+    reputation,
+    achievements,
+    mounts: mounts?.count ?? null,
+    collectedMounts: mounts?.collected ?? null,
   };
   return { summaries, problems };
 }

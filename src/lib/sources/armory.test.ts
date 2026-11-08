@@ -34,6 +34,24 @@ describe('armory main page to character state', () => {
     assert.equal(state.honorRank, 0);
   });
 
+  it('keeps every equipped item with its id, name, Quality, icon and bonus list', async () => {
+    const state = armoryToState(andrii, parseArmoryPage(await armoryPage('horizontally-blessed')));
+    assert.equal(state.gear?.length, 8);
+    assert.deepEqual(state.gear?.find((i) => i.id === 9779), {
+      id: 9779,
+      name: 'Bandit Cloak of Stamina',
+      quality: 'Uncommon',
+      icon: 'https://render.worldofwarcraft.com/forever-eu/icons/56/133771.jpg',
+      bonus: [12731],
+    });
+    assert.deepEqual(state.gear?.find((i) => i.id === 279895), {
+      id: 279895,
+      name: 'Ironforge Greathammer',
+      quality: 'Rare',
+      icon: 'https://render.worldofwarcraft.com/forever-eu/icons/56/133058.jpg',
+    });
+  });
+
   it('reports gear quality and honor rank as unknown when the page leaves them out', async () => {
     const page = JSON.parse((await armoryPage('ignatius-perdun')).match(/= (\{.*\});<\/script>/s)![1]);
     delete page.character.gear;
@@ -85,6 +103,16 @@ describe('armory sub-pages to character summaries', () => {
     assert.equal(summaries.mounts, 1);
   });
 
+  it('names each collected mount with its Quality, and only collected ones', async () => {
+    const pages = await subPages();
+    assert.deepEqual(readSubPages(pages).summaries.collectedMounts, []);
+    pages.mounts = await editedPage('mounts', (s) => {
+      s.mounts.mountsCollected = 1;
+      s.mounts.mounts.find((m: { id: number }) => m.id === 77).collected = true;
+    });
+    assert.deepEqual(readSubPages(pages).summaries.collectedMounts, [{ name: 'Black Battlestrider', quality: 'Common' }]);
+  });
+
   it('stores the same summary when reputation only grows inside a tier, so the poll is not saved', async () => {
     const before = readSubPages(await subPages()).summaries;
     const pages = await subPages();
@@ -109,7 +137,7 @@ describe('armory sub-pages to character summaries', () => {
       achievements: await editedPage('achievements', (s) => { delete s.achievementIndex; }),
       mounts: await editedPage('mounts', (s) => { s.mounts.mountsCollected = 'lots'; }),
     });
-    assert.deepEqual(summaries, { reputation: null, achievements: null, mounts: null });
+    assert.deepEqual(summaries, { reputation: null, achievements: null, mounts: null, collectedMounts: null });
     assert.equal(problems.length, 3);
     assert.match(problems[0], /^reputation: /);
   });

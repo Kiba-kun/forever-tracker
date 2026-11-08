@@ -1,9 +1,10 @@
 import type { DungeonSuggestion } from '../lib/dungeons.ts';
+import { PlayerName } from './GameLinks.tsx';
 
 const FACTION_NAME = { ALLIANCE: 'Alliance', HORDE: 'Horde' } as const;
 
 /** Dungeons at least two Mains currently fit: who could play together tonight. */
-export function DungeonSuggestions({ suggestions }: { suggestions: DungeonSuggestion[] }) {
+export function DungeonSuggestions({ suggestions, classOf }: { suggestions: DungeonSuggestion[]; classOf: Record<string, string> }) {
   if (suggestions.length === 0) {
     return <div className="note">No dungeon fits two Mains right now. Suggestions appear as soon as two of you are in range.</div>;
   }
@@ -13,15 +14,15 @@ export function DungeonSuggestions({ suggestions }: { suggestions: DungeonSugges
     <ul className="dungeons">
       {suggestions.map((d) => (
         <li key={`${d.name}:${d.faction}`}>
-          <div className="dungeon">
-            <span className="name">{d.name}{mixed && <span className="faction"> · {FACTION_NAME[d.faction]}</span>}</span>
-            <span className="range">{d.minLevel}–{d.maxLevel}</span>
-          </div>
-          <ul className="fits">
-            {d.mains.map((m) => (
-              <li key={m.character}>{m.player} <span className="character">· {m.character}</span></li>
+          <span className="name">{d.name}</span> <span className="range">({d.minLevel}–{d.maxLevel})</span>
+          {mixed && <span className="range"> · {FACTION_NAME[d.faction]}</span>}
+          <div className="fits">
+            {d.mains.map((m, i) => (
+              <span key={m.character} title={m.character}>
+                {i > 0 && ', '}<PlayerName player={m.player} className={classOf[m.player]} />
+              </span>
             ))}
-          </ul>
+          </div>
         </li>
       ))}
     </ul>

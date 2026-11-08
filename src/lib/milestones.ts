@@ -2,7 +2,7 @@
 // The armory keeps no history, so this is the only record of them. Recomputed from the full snapshot history on
 // every build, so fixing a rule here also fixes the past. Terms (Milestone, Baseline, Main...) are in CONTEXT.md.
 
-import { STANDINGS, betterGear, type CharacterState, type GearQuality, type RosterEntry, type Snapshot, type Standing } from './model.ts';
+import { STANDINGS, betterGear, type CharacterState, type CollectedMount, type EquippedItem, type GearQuality, type RosterEntry, type Snapshot, type Standing } from './model.ts';
 
 const LEVEL_MILESTONES = [10, 20, 30, 40, 50, 60];
 /** Profession tiers by the skill cap they unlock (original-era game). Apprentice (75) is not a Milestone. */
@@ -22,7 +22,7 @@ export interface JourneyPoint {
   levelsTogether: number;
 }
 
-interface PersonalMilestone {
+interface PersonalFields {
   at: number;
   /** Set on a recorded Milestone: only its day is known (YYYY-MM-DD), and `at` is midday UTC of it. */
   day?: string;
@@ -37,18 +37,24 @@ interface GroupMilestone {
 }
 
 export type Milestone =
-  | (PersonalMilestone & { kind: 'level'; level: number })
-  | (PersonalMilestone & { kind: 'spec'; spec: string; previous: string | null })
-  | (PersonalMilestone & { kind: 'profession'; profession: string; tier: (typeof PROFESSION_TIERS)[number]['tier'] })
-  | (PersonalMilestone & { kind: 'gear'; quality: (typeof GEAR_FIRSTS)[number] })
-  | (PersonalMilestone & { kind: 'honor-rank'; rank: number })
-  | (PersonalMilestone & { kind: 'reputation'; faction: string; standing: (typeof STANDING_MILESTONES)[number] })
-  | (PersonalMilestone & { kind: 'dungeon-achievement' | 'raid-achievement' | 'mount' })
+  | (PersonalFields & { kind: 'level'; level: number })
+  | (PersonalFields & { kind: 'spec'; spec: string; previous: string | null })
+  | (PersonalFields & { kind: 'profession'; profession: string; tier: (typeof PROFESSION_TIERS)[number]['tier'] })
+  /** `items`: the equipped items of that Quality when it happened; missing when the gear wasn't read. */
+  | (PersonalFields & { kind: 'gear'; quality: (typeof GEAR_FIRSTS)[number]; items?: EquippedItem[] })
+  | (PersonalFields & { kind: 'honor-rank'; rank: number })
+  | (PersonalFields & { kind: 'reputation'; faction: string; standing: (typeof STANDING_MILESTONES)[number] })
+  | (PersonalFields & { kind: 'dungeon-achievement' | 'raid-achievement' })
+  /** `mounts`: the mounts collected when it happened; missing when they weren't read. */
+  | (PersonalFields & { kind: 'mount'; mounts?: CollectedMount[] })
   | (GroupMilestone & { kind: 'levels-together'; levelsTogether: number })
   | (GroupMilestone & { kind: 'whole-group-level'; level: number })
   | (GroupMilestone & { kind: 'group-dungeon-achievement' | 'group-mounted' });
 
 type GroupMilestoneKind = 'levels-together' | 'whole-group-level' | 'group-dungeon-achievement' | 'group-mounted';
+
+/** A Milestone reached by one Main. */
+export type PersonalMilestone = Exclude<Milestone, { kind: GroupMilestoneKind }>;
 
 export function isGroupMilestone(m: Milestone): m is Extract<Milestone, { kind: GroupMilestoneKind }> {
   return !('player' in m);
@@ -288,7 +294,8 @@ function personalMilestones(at: number, player: string, before: MainState, now: 
       const reachedNow = betterGear(now.gearQuality, first) === now.gearQuality;
       const hadBefore = betterGear(before.bestGear, first) === before.bestGear;
       if (reachedNow && !hadBefore) {
-        found.push({ ...who, kind: 'gear', quality: first, text: `${player} equipped their first ${first} item` });
+        const items = now.gear?.filter((i) => i.quality === first);
+        found.push({ ...who, kind: 'gear', quality: first, text: `${player} equipped their first ${first} item`, ...(items?.length ? { items } : {}) });
       }
     }
   }
@@ -318,7 +325,8 @@ function personalMilestones(at: number, player: string, before: MainState, now: 
   ] as const;
   for (const first of firsts) {
     if (first.before === 0 && first.now != null && first.now > 0) {
-      found.push({ ...who, kind: first.kind, text: `${player} ${first.text}` });
+      const mounts = first.kind === 'mount' && now.collectedMounts ? { mounts: now.collectedMounts } : {};
+      found.push({ ...who, kind: first.kind, text: `${player} ${first.text}`, ...mounts });
     }
   }
 

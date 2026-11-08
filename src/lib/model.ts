@@ -32,6 +32,22 @@ export function betterGear(a: GearQuality | null | undefined, b: GearQuality | n
 export const STANDINGS = ['Hated', 'Hostile', 'Unfriendly', 'Neutral', 'Friendly', 'Honored', 'Revered', 'Exalted'] as const;
 export type Standing = (typeof STANDINGS)[number];
 
+/** An item a Main has equipped, as the armory shows it. `bonus` picks the random suffix ("of Stamina"). */
+export interface EquippedItem {
+  id: number;
+  name: string;
+  quality: GearQuality;
+  /** Blizzard-hosted icon URL, shown from its own address. */
+  icon: string | null;
+  bonus?: number[];
+}
+
+/** A mount a Main has collected. Wowhead needs a spell id we don't have, so mounts get no link. */
+export interface CollectedMount {
+  name: string;
+  quality: GearQuality;
+}
+
 export interface CharacterState {
   name: string;
   player?: string;
@@ -56,6 +72,8 @@ export interface CharacterState {
   honorableKills?: number | null;
   /** Best quality among equipped items (armory only). Missing or `null`: unknown, e.g. snapshots from before it was read. */
   gearQuality?: GearQuality | null;
+  /** Equipped items in page slot order (armory only). Missing or `null`: unknown. */
+  gear?: EquippedItem[] | null;
   /** PvP honor rank, 0 before the first rank (armory only). Missing or `null`: unknown. */
   honorRank?: number | null;
   /**
@@ -67,6 +85,8 @@ export interface CharacterState {
   achievements?: { dungeons: number; raids: number } | null;
   /** Mounts collected (armory mounts sub-page). Missing or `null`: unknown. */
   mounts?: number | null;
+  /** Each collected mount's name and Quality (armory mounts sub-page). Missing or `null`: unknown. */
+  collectedMounts?: CollectedMount[] | null;
 }
 
 export type SourceKind = 'mock' | 'blizzard' | 'armory';

@@ -13,7 +13,8 @@ function ago(ms: number) {
   return `${Math.round(h / 24)} days ago`;
 }
 
-export function LocalTime({ ts, mode }: { ts: number; mode: 'ago' | 'datetime' }) {
+/** `chat` is a chat-line time stamp, e.g. "5 Nov, 18:00". */
+export function LocalTime({ ts, mode }: { ts: number; mode: 'ago' | 'chat' }) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
@@ -24,7 +25,7 @@ export function LocalTime({ ts, mode }: { ts: number; mode: 'ago' | 'datetime' }
   if (now == null) return <time dateTime={iso}>&nbsp;</time>;
   return (
     <time dateTime={iso} title={new Date(ts).toLocaleString()}>
-      {mode === 'ago' ? ago(now - ts) : new Date(ts).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+      {mode === 'ago' ? ago(now - ts) : new Date(ts).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
     </time>
   );
 }
