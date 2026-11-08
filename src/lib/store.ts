@@ -3,7 +3,7 @@
 
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { Snapshot } from './model.ts';
+import type { RosterEntry, Snapshot } from './model.ts';
 
 const FILE = path.join(process.cwd(), 'data', 'snapshots.json');
 
@@ -30,4 +30,23 @@ export async function appendSnapshot(snapshot: Snapshot): Promise<{ discarded: n
   kept.push(snapshot);
   await writeSnapshots(kept);
   return { discarded: all.length - (kept.length - 1) };
+}
+
+/**
+ * Names the Player on stored records that lack one (records polled before Players were required), using the
+ * roster. Run while a Main is still in the roster, this keeps their history attributed after a later reroll.
+ */
+export function namePlayers(snapshots: Snapshot[], roster: RosterEntry[]): { snapshots: Snapshot[]; named: number } {
+  const playerOf = new Map(roster.map((r) => [r.name, r.player]));
+  let named = 0;
+  const result = snapshots.map((s) => ({
+    ...s,
+    characters: s.characters.map((c) => {
+      const player = c.player ? undefined : playerOf.get(c.name);
+      if (!player) return c;
+      named++;
+      return { ...c, player };
+    }),
+  }));
+  return { snapshots: result, named };
 }

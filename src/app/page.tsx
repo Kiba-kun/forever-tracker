@@ -1,5 +1,6 @@
 import { GroupTable } from '../components/GroupTable.tsx';
 import { JourneyChart } from '../components/JourneyChart.tsx';
+import { JourneyLog } from '../components/JourneyLog.tsx';
 import { LocalTime } from '../components/LocalTime.tsx';
 import { buildDashboard, GROUP_MILESTONE_STEP } from '../lib/dashboard.ts';
 import { roster } from '../lib/roster.ts';
@@ -73,7 +74,7 @@ export default async function Page() {
               <h2>The Journey</h2>
               <p className="desc">Levels earned together since tracking started. Every level anyone earns lifts the line.</p>
               {data.journey.length >= 2 ? (
-                <JourneyChart data={data.journey} />
+                <JourneyChart data={data.journey} markers={data.journeyMarkers} />
               ) : (
                 <div className="note">The Journey line starts building with each poll. Check back after a few hours of play.</div>
               )}
@@ -88,6 +89,12 @@ export default async function Page() {
                 ))}
               </div>
             </div>
+          </section>
+
+          <section className="card journey-log">
+            <h2>Journey log</h2>
+            <p className="desc">The Group&apos;s Milestones, newest first.</p>
+            <JourneyLog milestones={data.milestones} />
           </section>
 
           <section className="card">

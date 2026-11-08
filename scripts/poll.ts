@@ -2,13 +2,20 @@
 // Run on a schedule (cron / launchd / hosted cron) every ~15 minutes.
 import { roster } from '../src/lib/roster.ts';
 import { takeSnapshot } from '../src/lib/sources/index.ts';
-import { appendSnapshot, readSnapshots } from '../src/lib/store.ts';
+import { appendSnapshot, namePlayers, readSnapshots, writeSnapshots } from '../src/lib/store.ts';
 
 // `npm run poll -- --watch [minutes]` keeps polling (default every 15 min).
 const watchAt = process.argv.indexOf('--watch');
 const everyMin = watchAt === -1 ? 0 : Number(process.argv[watchAt + 1]) || 15;
 
 async function pollOnce() {
+  // Older records may not name their Player; name them while their Main is still in the roster.
+  const { snapshots: stored, named } = namePlayers(await readSnapshots(), roster);
+  if (named) {
+    await writeSnapshots(stored);
+    console.log(`Named the Player on ${named} stored records.`);
+  }
+
   const snapshot = await takeSnapshot(roster);
   const previous = (await readSnapshots()).at(-1);
   const unchanged =

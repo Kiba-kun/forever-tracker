@@ -1,6 +1,7 @@
 // Turns snapshot history into the view model the dashboard renders.
 // The Group is the hero: nothing here ranks Players (see docs/PRODUCT.md).
 
+import { journeyMarkers, milestonesOver, type JourneyPoint, type Milestone } from './milestones.ts';
 import { fractionalLevel, type CharacterState, type RosterEntry, type Snapshot } from './model.ts';
 
 const HOUR = 3_600_000;
@@ -19,7 +20,11 @@ export interface DashboardData {
   /** The next Group Milestone in Levels earned together, and how many levels are left to reach it. */
   nextGroupMilestone: { target: number; remaining: number };
   /** The Journey chart: Levels earned together after each snapshot. One Group line, no per-Player lines. */
-  journey: { t: number; levelsTogether: number }[];
+  journey: JourneyPoint[];
+  /** The Journey log: every Milestone, newest first. */
+  milestones: Milestone[];
+  /** Group Milestones placed on the Journey line, oldest first. */
+  journeyMarkers: (JourneyPoint & { text: string })[];
   stats: {
     /** Levels the whole Group gained over the last 24h (or the history available). */
     groupGained24h: number;
@@ -36,7 +41,7 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[]): Da
   if (!latest) {
     return {
       source: null, updatedAt: null, errors: [], characters: [], levelsTogether: 0,
-      nextGroupMilestone: nextGroupMilestoneAfter(0), journey: [],
+      nextGroupMilestone: nextGroupMilestoneAfter(0), journey: [], milestones: [], journeyMarkers: [],
       stats: { groupGained24h: 0, activeToday: 0, historyHours: 0 }, classMix: [],
     };
   }
@@ -60,6 +65,7 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[]): Da
 
   const journey = journeyOver(snapshots);
   const levelsTogether = journey.at(-1)!.levelsTogether;
+  const milestones = milestonesOver(snapshots, roster, journey, GROUP_MILESTONE_STEP);
 
   const mix = new Map<string, number>();
   for (const c of characters) mix.set(c.className, (mix.get(c.className) ?? 0) + 1);
@@ -71,6 +77,8 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[]): Da
     characters,
     levelsTogether,
     journey,
+    milestones,
+    journeyMarkers: journeyMarkers(milestones, journey),
     nextGroupMilestone: nextGroupMilestoneAfter(levelsTogether),
     stats: {
       groupGained24h,

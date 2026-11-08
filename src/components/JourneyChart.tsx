@@ -1,6 +1,6 @@
 'use client';
 
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { DashboardData } from '../lib/dashboard.ts';
 import { useThemeTokens } from './useThemeTokens.ts';
 
@@ -9,14 +9,18 @@ const fmtTick = (t: number) =>
 const fmtWhen = (t: number) =>
   new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
+type Markers = DashboardData['journeyMarkers'];
+
 interface TipProps {
   active?: boolean;
   label?: number;
   payload?: { value: number }[];
+  markers?: Markers;
 }
 
-function JourneyTooltip({ active, label, payload }: TipProps) {
+function JourneyTooltip({ active, label, payload, markers }: TipProps) {
   if (!active || !payload?.length || label == null) return null;
+  const here = markers?.filter((m) => m.t === label) ?? [];
   return (
     <div className="tooltip">
       <div className="when">{fmtWhen(label)}</div>
@@ -24,13 +28,17 @@ function JourneyTooltip({ active, label, payload }: TipProps) {
         <span className="n">Levels earned together</span>
         <span className="v">{payload[0].value}</span>
       </div>
+      {here.map((m) => <div className="milestone" key={m.text}>★ {m.text}</div>)}
     </div>
   );
 }
 
-/** The Group's Journey: one line of Levels earned together. Deliberately no per-Player lines (docs/PRODUCT.md). */
-export function JourneyChart({ data }: { data: DashboardData['journey'] }) {
-  const tokens = useThemeTokens(['accent', 'grid', 'text-muted', 'border'] as const);
+/**
+ * The Group's Journey: one line of Levels earned together, with Group Milestones marked.
+ * Deliberately no per-Player lines (docs/PRODUCT.md).
+ */
+export function JourneyChart({ data, markers }: { data: DashboardData['journey']; markers: Markers }) {
+  const tokens = useThemeTokens(['accent', 'grid', 'text-muted', 'border', 'surface-1'] as const);
 
   // One tick per local midnight inside the data range.
   const ticks: number[] = [];
@@ -65,7 +73,7 @@ export function JourneyChart({ data }: { data: DashboardData['journey'] }) {
               axisLine={false}
               tickLine={false}
             />
-            <Tooltip content={<JourneyTooltip />} cursor={{ stroke: tokens['text-muted'], strokeDasharray: '3 3' }} />
+            <Tooltip content={<JourneyTooltip markers={markers} />} cursor={{ stroke: tokens['text-muted'], strokeDasharray: '3 3' }} />
             <Area
               dataKey="levelsTogether"
               type="stepAfter"
@@ -77,6 +85,17 @@ export function JourneyChart({ data }: { data: DashboardData['journey'] }) {
               activeDot={{ r: 4, strokeWidth: 2 }}
               isAnimationActive={false}
             />
+            {markers.map((m) => (
+              <ReferenceDot
+                key={`${m.t}:${m.text}`}
+                x={m.t}
+                y={m.levelsTogether}
+                r={5}
+                fill={tokens.accent}
+                stroke={tokens['surface-1']}
+                strokeWidth={2}
+              />
+            ))}
           </AreaChart>
         </ResponsiveContainer>
       )}

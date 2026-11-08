@@ -105,6 +105,7 @@ body {
   background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
   padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.15); min-width: 180px;
 }
+.tooltip .milestone { color: var(--accent); margin-top: 4px; }
 .tooltip .when { color: var(--text-muted); margin-bottom: 4px; }
 .tooltip .row { display: flex; align-items: center; gap: 6px; }
 .tooltip .row .n { flex: 1; color: var(--text-secondary); }
@@ -142,6 +143,14 @@ table.board { width: 100%; border-collapse: collapse; }
 .mix .chip { border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--text-secondary); font-size: 12px; }
 .mix .chip b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
 
+.journey-log { margin-bottom: 16px; }
+.log { list-style: none; margin: 0; padding: 0; }
+.log li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--grid); font-size: 13px; }
+.log li:last-child { border-bottom: 0; }
+.log li.group .what { font-weight: 600; color: var(--accent); }
+.log .muted { color: var(--text-muted); font-size: 12px; }
+.log .when { color: var(--text-muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.log-more summary { cursor: pointer; color: var(--text-secondary); font-size: 12px; padding: 8px 0; }
 .errors { color: var(--critical); font-size: 12px; margin-top: 8px; }
 .empty { color: var(--text-muted); padding: 24px 0; text-align: center; }
 
