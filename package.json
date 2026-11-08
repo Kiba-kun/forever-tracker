@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "poll": "node --env-file-if-exists=.env scripts/poll.ts",
     "seed:mock": "node --env-file-if-exists=.env scripts/seed-mock.ts",
-    "probe": "node --env-file=.env scripts/probe.mjs"
+    "probe": "node --env-file=.env scripts/probe.mjs",
+    "test": "node --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "next": "^16.4.5",

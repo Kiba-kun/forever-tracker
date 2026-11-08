@@ -9,8 +9,10 @@ export type RulesetKey = 'pvp' | 'normal' | 'roleplay' | 'roleplay-pvp';
 export const RULESET_IDS: Record<RulesetKey, number> = { pvp: 1, normal: 2, roleplay: 3, 'roleplay-pvp': 15 };
 
 export interface RosterEntry {
+  /** The Main's Forever "First Last" name. */
   name: string;
-  player?: string;
+  /** The Player this Main belongs to. Required: the Group is made of people. */
+  player: string;
   ruleset: RulesetKey;
   /** Overrides the realm path segment once Blizzard's format for Forever is known. */
   realmSegment?: string;

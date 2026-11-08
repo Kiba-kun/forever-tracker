@@ -5,7 +5,8 @@ import { seriesVar } from './series.ts';
 /** Highest profession skill in the original-era game (Artisan). */
 const PROFESSION_MAX = 300;
 
-export function Leaderboard({ data }: { data: DashboardData }) {
+/** The Group: every Main in roster order, Player first. Never sorted or ranked (docs/PRODUCT.md). */
+export function GroupTable({ data }: { data: DashboardData }) {
   const hasXp = data.characters.some((c) => c.xp != null);
   const hasProfessions = data.characters.some((c) => c.professions?.length);
   return (
@@ -13,31 +14,28 @@ export function Leaderboard({ data }: { data: DashboardData }) {
       <table className="board">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Character</th>
+            <th>Player</th>
             <th className="hide-sm">Class</th>
             <th>Level</th>
             {hasXp && <th>Progress to next</th>}
             {hasProfessions && <th className="hide-sm">Professions</th>}
-            <th className="hide-sm num">Item lvl</th>
             <th className="hide-sm num">Last seen</th>
           </tr>
         </thead>
         <tbody>
-          {data.characters.map((c, i) => {
+          {data.characters.map((c) => {
             const pct = c.xp != null && c.xpToNext ? (c.xp / c.xpToNext) * 100 : null;
             return (
               <tr key={c.name}>
-                <td className="rank">{i + 1}</td>
                 <td>
                   <div className="who">
                     <div className="avatar" style={{ boxShadow: `inset 0 0 0 2px ${seriesVar(c.slot)}` }}>
                       {c.avatarUrl ? <img src={c.avatarUrl} alt="" /> : c.className[0]}
                     </div>
                     <div>
-                      <div className="name">{c.name}{c.isGhost ? ' 👻' : ''}</div>
-                      <div className="player">
-                        {[c.player, c.guild && `<${c.guild}>`].filter(Boolean).join(' · ') || `${c.race} ${c.className}`}
+                      <div className="name">{c.player}</div>
+                      <div className="character">
+                        {[`${c.name}${c.isGhost ? ' 👻' : ''}`, c.guild && `<${c.guild}>`].filter(Boolean).join(' · ')}
                       </div>
                     </div>
                   </div>
@@ -87,7 +85,6 @@ export function Leaderboard({ data }: { data: DashboardData }) {
                     </div>
                   </td>
                 )}
-                <td className="hide-sm num">{c.itemLevel ?? '—'}</td>
                 <td className="hide-sm num muted"><LocalTime ts={c.lastLogin} mode="ago" /></td>
               </tr>
             );

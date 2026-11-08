@@ -1,13 +1,11 @@
-import { GainsChart } from '../components/GainsChart.tsx';
-import { Leaderboard } from '../components/Leaderboard.tsx';
-import { LevelRaceChart } from '../components/LevelRaceChart.tsx';
+import { GroupTable } from '../components/GroupTable.tsx';
 import { LocalTime } from '../components/LocalTime.tsx';
 import { buildDashboard } from '../lib/dashboard.ts';
 import { roster } from '../lib/roster.ts';
 import { readSnapshots } from '../lib/store.ts';
 
 export default async function Page() {
-  const data = buildDashboard(await readSnapshots(), roster.map((r) => r.name));
+  const data = buildDashboard(await readSnapshots(), roster);
   const { stats } = data;
 
   return (
@@ -47,17 +45,12 @@ export default async function Page() {
             <div className="tile">
               <div className="label">Group average</div>
               <div className="value">{stats.avgLevel.toFixed(1)}</div>
-              <div className="sub">{data.characters.length} characters</div>
-            </div>
-            <div className="tile">
-              <div className="label">Leading</div>
-              <div className="value">{stats.leader?.level}</div>
-              <div className="sub">{stats.leader?.name}</div>
+              <div className="sub">{data.characters.length} Mains</div>
             </div>
             <div className="tile">
               <div className="label">Levels gained</div>
               <div className="value">+{stats.groupGained24h.toFixed(1)}</div>
-              <div className="sub">{stats.historyHours >= 24 ? 'whole group' : `tracked for ${Math.max(0, Math.round(stats.historyHours))} h so far`}</div>
+              <div className="sub">{stats.historyHours >= 24 ? 'whole Group' : `tracked for ${Math.max(0, Math.round(stats.historyHours))} h so far`}</div>
             </div>
             <div className="tile">
               <div className="label">Played today</div>
@@ -66,40 +59,20 @@ export default async function Page() {
             </div>
           </section>
 
-          <section className="grid">
-            <div className="card">
-              <h2>Level race</h2>
-              <p className="desc">
-                {data.source === 'armory' ? 'Level over time, since tracking started.' : 'Level including progress into the next one, since launch.'} Hover a name to focus it.
-              </p>
-              {data.race.length >= 2 ? (
-                <LevelRaceChart series={data.series} data={data.race} />
-              ) : (
-                <div className="note">History starts building with each poll. Check back after a few hours of play.</div>
-              )}
-            </div>
-            <div className="card">
-              <h2>Levels gained, last {stats.historyHours >= 24 || stats.historyHours < 1 ? '24 hours' : `${Math.round(stats.historyHours)} h`}</h2>
-              <p className="desc">Who&apos;s been grinding.</p>
-              {stats.historyHours >= 1 ? (
-                <GainsChart rows={data.characters} />
-              ) : (
-                <div className="note">Needs at least an hour of history.</div>
-              )}
-              <h2 style={{ marginTop: 24 }}>Class mix</h2>
-              <p className="desc">Classes in the group right now.</p>
-              <div className="mix">
-                {data.classMix.map((m) => (
-                  <span className="chip" key={m.className}><b>{m.count}</b> {m.className}</span>
-                ))}
-              </div>
+          <section className="card">
+            <h2>Class mix</h2>
+            <p className="desc">Classes in the Group right now.</p>
+            <div className="mix">
+              {data.classMix.map((m) => (
+                <span className="chip" key={m.className}><b>{m.count}</b> {m.className}</span>
+              ))}
             </div>
           </section>
 
           <section className="card">
-            <h2>Leaderboard</h2>
-            <p className="desc">Current standings.</p>
-            <Leaderboard data={data} />
+            <h2>The Group</h2>
+            <p className="desc">Everyone on the Journey.</p>
+            <GroupTable data={data} />
             {data.errors.length > 0 && (
               <div className="errors">
                 Couldn&apos;t fetch: {data.errors.map((e) => `${e.name} (${e.message})`).join('; ')}
