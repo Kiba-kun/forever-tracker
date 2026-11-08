@@ -1,3 +1,4 @@
+import { DungeonSuggestions } from '../components/DungeonSuggestions.tsx';
 import { GroupTable } from '../components/GroupTable.tsx';
 import { JourneyChart } from '../components/JourneyChart.tsx';
 import { JourneyLog } from '../components/JourneyLog.tsx';
@@ -80,13 +81,21 @@ export default async function Page() {
               )}
             </div>
 
-            <div className="card">
-              <h2>Class mix</h2>
-              <p className="desc">Classes in the Group right now.</p>
-              <div className="mix">
-                {data.classMix.map((m) => (
-                  <span className="chip" key={m.className}><b>{m.count}</b> {m.className}</span>
-                ))}
+            <div className="side-column">
+              <div className="card">
+                <h2>Dungeon suggestions</h2>
+                <p className="desc">Dungeons at least two of you fit right now.</p>
+                <DungeonSuggestions suggestions={data.dungeonSuggestions} />
+              </div>
+
+              <div className="card">
+                <h2>Class mix</h2>
+                <p className="desc">Classes in the Group right now.</p>
+                <div className="mix">
+                  {data.classMix.map((m) => (
+                    <span className="chip" key={m.className}><b>{m.count}</b> {m.className}</span>
+                  ))}
+                </div>
               </div>
             </div>
           </section>

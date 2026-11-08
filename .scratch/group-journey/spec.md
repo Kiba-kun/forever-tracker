@@ -187,7 +187,7 @@ A Group Milestone whose condition is already true in the first snapshot that can
 ### Dungeon suggestions
 
 - A fixed table of original-era dungeons, each with a name and recommended level range, kept in code. It covers Ragefire Chasm through the level-60 dungeons; the Scarlet Monastery wings and Dire Maul wings are listed separately.
-- A suggestion is any dungeon whose range includes the current level of at least 2 Mains. Ordered by the dungeon's level range; each lists the Mains in roster order.
+- A suggestion is any dungeon whose range includes the current level of at least 2 Mains of the same faction (players of different factions can't group). Dungeons entered from inside a faction's capital (Ragefire Chasm, The Stockade) are only suggested to that faction. Ordered by the dungeon's level range; each lists the Mains in roster order.
 
 ### View model changes
 

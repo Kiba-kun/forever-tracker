@@ -56,5 +56,5 @@ _Avoid_: Feed, activity, history
 ### Playing together
 
 **Dungeon suggestion**:
-A dungeon whose recommended level range currently includes at least two Mains, shown with who fits.
+A dungeon whose recommended level range currently includes at least two Mains of the same faction, shown with who fits.
 _Avoid_: Level band, matchmaking

@@ -1,6 +1,7 @@
 // Turns snapshot history into the view model the dashboard renders.
 // The Group is the hero: nothing here ranks Players (see docs/PRODUCT.md).
 
+import { dungeonSuggestions, type DungeonSuggestion } from './dungeons.ts';
 import { journeyMarkers, milestonesOver, type JourneyPoint, type Milestone } from './milestones.ts';
 import { fractionalLevel, type CharacterState, type RosterEntry, type Snapshot } from './model.ts';
 
@@ -25,6 +26,8 @@ export interface DashboardData {
   milestones: Milestone[];
   /** Group Milestones placed on the Journey line, oldest first. */
   journeyMarkers: (JourneyPoint & { text: string })[];
+  /** Dungeons at least two Mains of one faction currently fit, sorted by level range. */
+  dungeonSuggestions: DungeonSuggestion[];
   stats: {
     /** Levels the whole Group gained over the last 24h (or the history available). */
     groupGained24h: number;
@@ -41,7 +44,7 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[]): Da
   if (!latest) {
     return {
       source: null, updatedAt: null, errors: [], characters: [], levelsTogether: 0,
-      nextGroupMilestone: nextGroupMilestoneAfter(0), journey: [], milestones: [], journeyMarkers: [],
+      nextGroupMilestone: nextGroupMilestoneAfter(0), journey: [], milestones: [], journeyMarkers: [], dungeonSuggestions: [],
       stats: { groupGained24h: 0, activeToday: 0, historyHours: 0 }, classMix: [],
     };
   }
@@ -79,6 +82,7 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[]): Da
     journey,
     milestones,
     journeyMarkers: journeyMarkers(milestones, journey),
+    dungeonSuggestions: dungeonSuggestions(characters),
     nextGroupMilestone: nextGroupMilestoneAfter(levelsTogether),
     stats: {
       groupGained24h,

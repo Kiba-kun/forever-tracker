@@ -139,6 +139,16 @@ table.board { width: 100%; border-collapse: collapse; }
 }
 .board-wrap { overflow-x: auto; }
 
+.side-column { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dungeons { list-style: none; margin: 0; padding: 0; }
+.dungeons > li { padding: 8px 0; border-bottom: 1px solid var(--grid); }
+.dungeons > li:last-child { border-bottom: 0; }
+.dungeons .dungeon { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.dungeons .name { font-weight: 600; }
+.dungeons .range { color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dungeons .faction { font-weight: 400; color: var(--text-muted); }
+.dungeons .fits { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--text-secondary); font-size: 12px; }
+.dungeons .fits .character { color: var(--text-muted); }
 .mix { display: flex; flex-wrap: wrap; gap: 8px; }
 .mix .chip { border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--text-secondary); font-size: 12px; }
 .mix .chip b { color: var(--text-primary); font-variant-numeric: tabular-nums; }

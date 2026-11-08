@@ -333,3 +333,52 @@ describe('Milestones', () => {
     assert.deepEqual(texts(data), []);
   });
 });
+
+describe('Dungeon suggestions', () => {
+  const suggest = (...mains: CharacterState[]) =>
+    buildDashboard([snapshot(T0, mains)], roster).dungeonSuggestions.map((d) => `${d.name}: ${d.mains.map((m) => m.player).join(', ')}`);
+
+  it('suggests a dungeon at least two Mains fit, with who fits in roster order', () => {
+    assert.ok(suggest(main('Wheredem Hosat', 20), main('Horizontally Blessed', 19)).includes('Wailing Caverns: Andrii, Max'));
+  });
+
+  it('leaves out a dungeon only one Main fits', () => {
+    assert.deepEqual(suggest(main('Horizontally Blessed', 58), main('Ignatius Perdun', 12)), []);
+  });
+
+  it('counts a Main exactly at either end of a dungeon\'s range as fitting', () => {
+    // Shadowfang Keep is 22-30.
+    assert.ok(suggest(main('Horizontally Blessed', 22), main('Ignatius Perdun', 30)).includes('Shadowfang Keep: Andrii, Vlad'));
+  });
+
+  it('never pairs Mains of different factions, who cannot group', () => {
+    assert.deepEqual(suggest(main('Horizontally Blessed', 20), main('Ignatius Perdun', 20, { faction: 'HORDE' })), []);
+  });
+
+  it('never suggests a dungeon inside the other faction\'s capital', () => {
+    const alliance = suggest(main('Horizontally Blessed', 14), main('Ignatius Perdun', 16));
+    assert.ok(!alliance.some((s) => s.startsWith('Ragefire Chasm')), 'Ragefire Chasm is in Orgrimmar');
+    const horde = suggest(main('Horizontally Blessed', 14, { faction: 'HORDE' }), main('Ignatius Perdun', 16, { faction: 'HORDE' }));
+    assert.ok(horde.includes('Ragefire Chasm: Andrii, Vlad'));
+  });
+
+  it('lists suggestions by level range, lowest first', () => {
+    const names = buildDashboard([snapshot(T0, [main('Horizontally Blessed', 30), main('Ignatius Perdun', 30)])], roster)
+      .dungeonSuggestions.map((d) => d.name);
+    assert.deepEqual(names, ['Shadowfang Keep', 'The Stockade', 'Blackfathom Deeps', 'Scarlet Monastery: Graveyard', 'Gnomeregan', 'Razorfen Kraul', 'Scarlet Monastery: Library']);
+  });
+
+  it('keeps each faction\'s suggestion for the same dungeon apart, labelled by faction', () => {
+    const data = buildDashboard(
+      [snapshot(T0, [
+        main('Horizontally Blessed', 20),
+        main('Ignatius Perdun', 21),
+        main('Wheredem Hosat', 20, { faction: 'HORDE' }),
+        main('Zhyvchyk Zero', 22, { faction: 'HORDE', player: 'Roman' }),
+      ])],
+      [...roster, { name: 'Zhyvchyk Zero', player: 'Roman', ruleset: 'pvp' }],
+    );
+    const caverns = data.dungeonSuggestions.filter((d) => d.name === 'Wailing Caverns');
+    assert.deepEqual(caverns.map((d) => [d.faction, d.mains.map((m) => m.player)]), [['ALLIANCE', ['Andrii', 'Vlad']], ['HORDE', ['Max', 'Roman']]]);
+  });
+});
