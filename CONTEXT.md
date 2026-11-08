@@ -58,3 +58,9 @@ _Avoid_: Feed, activity, history
 **Dungeon suggestion**:
 A dungeon whose recommended level range currently includes at least two Mains of the same faction, shown with who fits.
 _Avoid_: Level band, matchmaking
+
+### The game
+
+**Quality**:
+The game's grade of an item or mount: Poor, Common, Uncommon, Rare, Epic or Legendary, each shown in its own colour (grey, white, green, blue, purple, orange). A Milestone about gear or mounts names the items or mounts that earned it, in their Quality colour.
+_Avoid_: Tier, rarity
