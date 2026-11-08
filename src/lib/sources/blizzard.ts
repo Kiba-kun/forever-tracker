@@ -12,6 +12,6 @@ export const blizzardSource: CharacterSource = {
       if (e instanceof BlizzardApiError) return null;
       throw e;
     });
-    return normalize(entry, profile, media);
+    return { character: normalize(entry, profile, media) };
   },
 };

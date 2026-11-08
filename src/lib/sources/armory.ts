@@ -7,7 +7,7 @@
 
 import { nameSlug } from '../blizzard/client.ts';
 import type { FactionType } from '../blizzard/types.ts';
-import { GEAR_QUALITIES, betterGear, xpToNext, type CharacterState, type GearQuality, type RosterEntry } from '../model.ts';
+import { GEAR_QUALITIES, STANDINGS, betterGear, xpToNext, type CharacterState, type GearQuality, type RosterEntry, type Standing } from '../model.ts';
 import type { CharacterSource } from './types.ts';
 
 const MARKER = 'var characterProfileInitialState = ';
@@ -52,7 +52,16 @@ export function armoryUrl(entry: RosterEntry) {
   return `https://worldofwarcraft.blizzard.com/en-us/forever/${region}/armory/character/${nameSlug(entry.name)}/`;
 }
 
-export function parseArmoryPage(html: string): ArmoryCharacter {
+/** The armory sub-pages read for each Main, by their path under the character's armory URL. */
+const SUB_PAGES = { reputation: 'reputation', achievements: 'achievements', mounts: 'collections/mounts' } as const;
+type SubPage = keyof typeof SUB_PAGES;
+
+/** Each sub-page's HTML, or why it couldn't be fetched. */
+export type ArmorySubPages = Record<SubPage, string | Error>;
+type SubPageSummaries = Pick<CharacterState, SubPage>;
+
+/** The page's embedded state object. */
+function embeddedState(html: string): Record<string, unknown> {
   const start = html.indexOf(MARKER);
   if (start === -1) throw new Error('armory page has no character data (character missing or page format changed)');
   // The object is followed by ';' — find the end by matching braces outside strings.
@@ -68,8 +77,11 @@ export function parseArmoryPage(html: string): ArmoryCharacter {
     else if (ch === '{') depth++;
     else if (ch === '}' && --depth === 0) break;
   }
-  const state = JSON.parse(html.slice(start + MARKER.length, i + 1)) as { character?: ArmoryCharacter };
-  const c = state.character;
+  return JSON.parse(html.slice(start + MARKER.length, i + 1));
+}
+
+export function parseArmoryPage(html: string): ArmoryCharacter {
+  const c = (embeddedState(html) as { character?: ArmoryCharacter }).character;
   if (!c || typeof c.level !== 'number' || !c.class?.name || !c.race?.name) {
     throw new Error('armory character data is missing level/class/race (page format changed?)');
   }
@@ -118,15 +130,94 @@ function bestQuality(gear: ArmoryCharacter['gear']): GearQuality | null {
   return best ?? null;
 }
 
+interface ReputationNode {
+  name?: string;
+  standingType?: { enum: string };
+  reputations?: ReputationNode[];
+}
+
+/** Every faction's standing tier, in page order. Faction groups (e.g. "Alliance") only hold factions. */
+function reputationSummary(html: string): NonNullable<CharacterState['reputation']> {
+  const root = (embeddedState(html).reputations as ReputationNode | undefined)?.reputations;
+  if (!Array.isArray(root)) throw new Error('no reputation list (page format changed?)');
+  const found: NonNullable<CharacterState['reputation']> = [];
+  const visit = (nodes: ReputationNode[]) => {
+    for (const r of nodes) {
+      if (r.standingType) {
+        const standing = STANDINGS.find((s) => s.toUpperCase() === r.standingType?.enum);
+        if (!r.name || !standing) throw new Error(`unknown standing "${r.standingType.enum}" with "${r.name}"`);
+        found.push({ faction: r.name, standing });
+      }
+      if (Array.isArray(r.reputations)) visit(r.reputations);
+    }
+  };
+  visit(root);
+  return found;
+}
+
+function achievementsSummary(html: string): NonNullable<CharacterState['achievements']> {
+  const categories = (embeddedState(html).achievementIndex as { categories?: { slug: string; count: unknown }[] } | undefined)?.categories;
+  const count = (slug: string) => {
+    const n = categories?.find((c) => c.slug === slug)?.count;
+    if (typeof n !== 'number') throw new Error(`no ${slug} achievement count (page format changed?)`);
+    return n;
+  };
+  return { dungeons: count('dungeons'), raids: count('raids') };
+}
+
+function mountsSummary(html: string): number {
+  const n = (embeddedState(html).mounts as { mountsCollected?: unknown } | undefined)?.mountsCollected;
+  if (typeof n !== 'number') throw new Error('no mounts collected count (page format changed?)');
+  return n;
+}
+
+/**
+ * The summaries read from the sub-pages. A sub-page that failed to load or can't be read leaves its summary
+ * `null` (unknown) and is reported in `problems`; it never fails the Main.
+ */
+export function readSubPages(pages: ArmorySubPages): { summaries: SubPageSummaries; problems: string[] } {
+  const problems: string[] = [];
+  const read = <T>(page: SubPage, summarize: (html: string) => T): T | null => {
+    const html = pages[page];
+    try {
+      if (html instanceof Error) throw html;
+      return summarize(html);
+    } catch (e) {
+      problems.push(`${page}: ${(e as Error).message}`);
+      return null;
+    }
+  };
+  const summaries = {
+    reputation: read('reputation', reputationSummary),
+    achievements: read('achievements', achievementsSummary),
+    mounts: read('mounts', mountsSummary),
+  };
+  return { summaries, problems };
+}
+
+async function fetchPage(url: string): Promise<string> {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'forever-tracker/0.1 (private friends dashboard)', Accept: 'text/html' },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`armory ${res.status} for ${url}`);
+  return res.text();
+}
+
 export const armorySource: CharacterSource = {
   kind: 'armory',
   async fetchCharacter(entry) {
     const url = armoryUrl(entry);
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'forever-tracker/0.1 (private friends dashboard)', Accept: 'text/html' },
-      cache: 'no-store',
+    const subPage = (page: SubPage) =>
+      fetchPage(url + SUB_PAGES[page]).catch((e: unknown) => (e instanceof Error ? e : new Error(String(e))));
+    const pending = { reputation: subPage('reputation'), achievements: subPage('achievements'), mounts: subPage('mounts') };
+    // The main page decides whether the Main loads at all; sub-pages only fill in their summaries.
+    const character = armoryToState(entry, parseArmoryPage(await fetchPage(url)));
+    const { summaries, problems } = readSubPages({
+      reputation: await pending.reputation,
+      achievements: await pending.achievements,
+      mounts: await pending.mounts,
     });
-    if (!res.ok) throw new Error(`armory ${res.status} for ${url}`);
-    return armoryToState(entry, parseArmoryPage(await res.text()));
+    return { character: { ...character, ...summaries }, problems };
   },
 };

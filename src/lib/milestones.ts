@@ -2,7 +2,7 @@
 // The armory keeps no history, so this is the only record of them. Recomputed from the full snapshot history on
 // every build, so fixing a rule here also fixes the past. Terms (Milestone, Baseline, Main...) are in CONTEXT.md.
 
-import { betterGear, type CharacterState, type GearQuality, type RosterEntry, type Snapshot } from './model.ts';
+import { STANDINGS, betterGear, type CharacterState, type GearQuality, type RosterEntry, type Snapshot, type Standing } from './model.ts';
 
 const LEVEL_MILESTONES = [10, 20, 30, 40, 50, 60];
 /** Profession tiers by the skill cap they unlock (original-era game). Apprentice (75) is not a Milestone. */
@@ -13,6 +13,8 @@ const PROFESSION_TIERS = [
 ] as const;
 /** Gear qualities whose first equipped item is a Milestone. */
 const GEAR_FIRSTS = ['Rare', 'Epic'] as const satisfies readonly GearQuality[];
+/** Reputation standings worth a Milestone. */
+const STANDING_MILESTONES = ['Honored', 'Revered', 'Exalted'] as const satisfies readonly Standing[];
 
 /** Levels earned together after one snapshot. */
 export interface JourneyPoint {
@@ -38,11 +40,16 @@ export type Milestone =
   | (PersonalMilestone & { kind: 'profession'; profession: string; tier: (typeof PROFESSION_TIERS)[number]['tier'] })
   | (PersonalMilestone & { kind: 'gear'; quality: (typeof GEAR_FIRSTS)[number] })
   | (PersonalMilestone & { kind: 'honor-rank'; rank: number })
+  | (PersonalMilestone & { kind: 'reputation'; faction: string; standing: (typeof STANDING_MILESTONES)[number] })
+  | (PersonalMilestone & { kind: 'dungeon-achievement' | 'raid-achievement' | 'mount' })
   | (GroupMilestone & { kind: 'levels-together'; levelsTogether: number })
-  | (GroupMilestone & { kind: 'whole-group-level'; level: number });
+  | (GroupMilestone & { kind: 'whole-group-level'; level: number })
+  | (GroupMilestone & { kind: 'group-dungeon-achievement' | 'group-mounted' });
 
-export function isGroupMilestone(m: Milestone): m is Extract<Milestone, { kind: 'levels-together' | 'whole-group-level' }> {
-  return m.kind === 'levels-together' || m.kind === 'whole-group-level';
+type GroupMilestoneKind = 'levels-together' | 'whole-group-level' | 'group-dungeon-achievement' | 'group-mounted';
+
+export function isGroupMilestone(m: Milestone): m is Extract<Milestone, { kind: GroupMilestoneKind }> {
+  return !('player' in m);
 }
 
 /**
@@ -60,6 +67,12 @@ interface MainState {
   bestGear: GearQuality | undefined;
   /** Highest honor rank ever reached: a rank lost to weekly decay and regained is not marked again. */
   bestHonorRank: number | undefined;
+  /** Best standing ever reached per faction: a standing lost and regained is not marked again. */
+  bestStandings: Map<string, Standing> | undefined;
+  /** Most dungeon / raid achievements and mounts ever seen; only going from none to some is a Milestone. */
+  bestDungeons: number | undefined;
+  bestRaids: number | undefined;
+  bestMounts: number | undefined;
 }
 
 /**
@@ -79,11 +92,15 @@ export function milestonesOver(
   const recorded = new Set<string>();
   /** Levels the whole Group has reached (announced or Baseline); undefined until every Player's Main is known. */
   let wholeGroupLevels: Set<number> | undefined;
+  /** Group firsts already true (announced or Baseline); undefined until every current Main's value is known. */
+  let groupDungeon: boolean | undefined;
+  let groupMounted: boolean | undefined;
   const found: Milestone[] = [];
 
   snapshots.forEach((s, i) => {
     // Levels a Character brings when first recorded are a Baseline, not levels earned on the Journey.
     let firstSightingLevels = 0;
+    const personal: Milestone[] = [];
     for (const c of s.characters) {
       if (!recorded.has(c.name)) firstSightingLevels += c.level - 1;
       recorded.add(c.name);
@@ -94,9 +111,10 @@ export function milestonesOver(
       // First sighting of a Main (including a new Main after a switch) is a Baseline:
       // nothing it already had becomes a Milestone.
       const sameMain = before?.character === c.name ? before : undefined;
-      if (sameMain) found.push(...personalMilestones(s.takenAt, player, sameMain, c));
+      if (sameMain) personal.push(...personalMilestones(s.takenAt, player, sameMain, c));
       mains.set(player, remember(sameMain, c));
     }
+    found.push(...personal);
 
     // Levels earned together passing a multiple of groupStep. The first snapshot is the Baseline.
     if (i > 0) {
@@ -119,6 +137,33 @@ export function milestonesOver(
         found.push({ at: s.takenAt, kind: 'whole-group-level', level, text: `The whole Group reached level ${level}` });
       }
     }
+
+    // Group firsts. Judged once every Player's current Main has a known value; what's true then is the Baseline.
+    // Later, a first is announced only when a Main's own first makes it true. Becoming true any other way
+    // (a Player switching to a Main that already had it) is a Baseline too.
+    const currentMains = groupPlayers.map((p) => mains.get(p));
+    const groupFirst = (
+      valueOf: (m: MainState) => number | undefined,
+      holdsForGroup: (values: number[]) => boolean,
+      reachedBefore: boolean | undefined,
+      personalKind: Milestone['kind'],
+      milestone: Extract<Milestone, { kind: GroupMilestoneKind }>,
+    ): boolean | undefined => {
+      const values = currentMains.map((m) => (m ? valueOf(m) : undefined));
+      if (values.some((v) => v === undefined)) return reachedBefore;
+      const reached = holdsForGroup(values as number[]);
+      if (reachedBefore === undefined || reachedBefore || !reached) return reachedBefore || reached;
+      if (personal.some((m) => m.kind === personalKind)) found.push(milestone);
+      return true;
+    };
+    groupDungeon = groupFirst(
+      (m) => m.bestDungeons, (v) => v.some((n) => n > 0), groupDungeon, 'dungeon-achievement',
+      { at: s.takenAt, kind: 'group-dungeon-achievement', text: 'The Group earned its first dungeon achievement' },
+    );
+    groupMounted = groupFirst(
+      (m) => m.bestMounts, (v) => v.every((n) => n > 0), groupMounted, 'mount',
+      { at: s.takenAt, kind: 'group-mounted', text: 'Every Main in the Group has a mount' },
+    );
   });
 
   // Newest first. Within one snapshot, later-detected Milestones (e.g. level 30 after 20) come first too.
@@ -158,8 +203,29 @@ function remember(before: MainState | undefined, now: CharacterState): MainState
     spec: now.spec === undefined || (now.spec === null && before?.spec) ? before?.spec : now.spec,
     professionCaps,
     bestGear: betterGear(before?.bestGear, now.gearQuality),
-    bestHonorRank: now.honorRank == null ? before?.bestHonorRank : Math.max(now.honorRank, before?.bestHonorRank ?? 0),
+    bestHonorRank: higher(before?.bestHonorRank, now.honorRank),
+    bestStandings: rememberStandings(before?.bestStandings, now.reputation),
+    bestDungeons: higher(before?.bestDungeons, now.achievements?.dungeons),
+    bestRaids: higher(before?.bestRaids, now.achievements?.raids),
+    bestMounts: higher(before?.bestMounts, now.mounts),
   };
+}
+
+/** The higher of what was known and what's reported now; an unknown report changes nothing. */
+function higher(known: number | undefined, now: number | null | undefined): number | undefined {
+  return now == null ? known : Math.max(now, known ?? now);
+}
+
+const standingRank = (s: Standing) => STANDINGS.indexOf(s);
+
+function rememberStandings(known: Map<string, Standing> | undefined, now: CharacterState['reputation']) {
+  if (!now) return known;
+  const best = new Map(known);
+  for (const { faction, standing } of now) {
+    const before = best.get(faction);
+    if (!before || standingRank(standing) > standingRank(before)) best.set(faction, standing);
+  }
+  return best;
 }
 
 function personalMilestones(at: number, player: string, before: MainState, now: CharacterState): Milestone[] {
@@ -198,6 +264,29 @@ function personalMilestones(at: number, player: string, before: MainState, now: 
   if (before.bestHonorRank !== undefined && now.honorRank != null) {
     for (let rank = before.bestHonorRank + 1; rank <= now.honorRank; rank++) {
       found.push({ ...who, kind: 'honor-rank', rank, text: `${player} reached honor rank ${rank}` });
+    }
+  }
+
+  // A faction first met already at Honored (e.g. between two polls) counts from nothing, like a new profession.
+  if (before.bestStandings && now.reputation) {
+    for (const { faction, standing } of now.reputation) {
+      const bestBefore = before.bestStandings.get(faction);
+      for (const tier of STANDING_MILESTONES) {
+        if (standingRank(standing) >= standingRank(tier) && (!bestBefore || standingRank(bestBefore) < standingRank(tier))) {
+          found.push({ ...who, kind: 'reputation', faction, standing: tier, text: `${player} reached ${tier} with ${faction}` });
+        }
+      }
+    }
+  }
+
+  const firsts = [
+    { kind: 'dungeon-achievement', before: before.bestDungeons, now: now.achievements?.dungeons, text: 'earned their first dungeon achievement' },
+    { kind: 'raid-achievement', before: before.bestRaids, now: now.achievements?.raids, text: 'earned their first raid achievement' },
+    { kind: 'mount', before: before.bestMounts, now: now.mounts, text: 'got their first mount' },
+  ] as const;
+  for (const first of firsts) {
+    if (first.before === 0 && first.now != null && first.now > 0) {
+      found.push({ ...who, kind: first.kind, text: `${player} ${first.text}` });
     }
   }
 

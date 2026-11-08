@@ -28,6 +28,10 @@ export function betterGear(a: GearQuality | null | undefined, b: GearQuality | n
   return GEAR_QUALITIES.indexOf(a) >= GEAR_QUALITIES.indexOf(b) ? a : b;
 }
 
+/** Reputation standing tiers, lowest to highest. */
+export const STANDINGS = ['Hated', 'Hostile', 'Unfriendly', 'Neutral', 'Friendly', 'Honored', 'Revered', 'Exalted'] as const;
+export type Standing = (typeof STANDINGS)[number];
+
 export interface CharacterState {
   name: string;
   player?: string;
@@ -54,6 +58,15 @@ export interface CharacterState {
   gearQuality?: GearQuality | null;
   /** PvP honor rank, 0 before the first rank (armory only). Missing or `null`: unknown. */
   honorRank?: number | null;
+  /**
+   * Standing tier with each faction, no points: grinding inside a tier changes nothing (armory reputation sub-page).
+   * Missing or `null`: unknown, e.g. the sub-page failed to load.
+   */
+  reputation?: { faction: string; standing: Standing }[] | null;
+  /** Completed achievements in the Dungeons and Raids categories (armory achievements sub-page). Missing or `null`: unknown. */
+  achievements?: { dungeons: number; raids: number } | null;
+  /** Mounts collected (armory mounts sub-page). Missing or `null`: unknown. */
+  mounts?: number | null;
 }
 
 export type SourceKind = 'mock' | 'blizzard' | 'armory';

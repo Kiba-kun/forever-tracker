@@ -14,7 +14,7 @@ if (existing.some((s) => s.source !== 'mock') && !process.argv.includes('--force
 
 const STEP = 2 * 3_600_000;
 const snapshots: Snapshot[] = [];
-for (let t = LAUNCH_AT; t <= Date.now(); t += STEP) snapshots.push(await takeSnapshot(roster, mockSource, t));
-snapshots.push(await takeSnapshot(roster, mockSource, Date.now()));
+for (let t = LAUNCH_AT; t <= Date.now(); t += STEP) snapshots.push((await takeSnapshot(roster, mockSource, t)).snapshot);
+snapshots.push((await takeSnapshot(roster, mockSource, Date.now())).snapshot);
 await writeSnapshots(snapshots);
 console.log(`Seeded ${snapshots.length} mock snapshots.`);

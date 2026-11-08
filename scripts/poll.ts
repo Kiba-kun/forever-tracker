@@ -16,7 +16,7 @@ async function pollOnce() {
     console.log(`Named the Player on ${named} stored records.`);
   }
 
-  const snapshot = await takeSnapshot(roster);
+  const { snapshot, problems } = await takeSnapshot(roster);
   const previous = (await readSnapshots()).at(-1);
   const unchanged =
     previous?.source === snapshot.source &&
@@ -33,6 +33,8 @@ async function pollOnce() {
   }
   for (const c of snapshot.characters) console.log(`  ${c.name.padEnd(24)} lvl ${String(c.level).padEnd(3)} ${c.race} ${c.spec ? c.spec + ' ' : ''}${c.className}`);
   for (const e of snapshot.errors) console.log(`  ✗ ${e.name}: ${e.message}`);
+  // A sub-page that failed only leaves its summary unknown; listed so a page format change gets noticed.
+  for (const p of problems) console.log(`  ⚠ ${p.name}: ${p.message} (left unknown)`);
 }
 
 await pollOnce();

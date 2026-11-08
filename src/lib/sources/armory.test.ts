@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import type { RosterEntry } from '../model.ts';
-import { armoryToState, parseArmoryPage } from './armory.ts';
+import { armoryToState, parseArmoryPage, readSubPages, type ArmorySubPages } from './armory.ts';
 
 // Real armory captures from 2026-11-08: the JSON the main page embeds as `characterProfileInitialState`.
 async function armoryPage(fixture: string) {
@@ -41,5 +41,76 @@ describe('armory main page to character state', () => {
     const state = armoryToState(vlad, parseArmoryPage(`var characterProfileInitialState = ${JSON.stringify(page)};`));
     assert.equal(state.gearQuality, null);
     assert.equal(state.honorRank, null);
+  });
+});
+
+// Real captures of Horizontally Blessed's reputation, achievements and mounts sub-pages from 2026-11-08.
+async function subPages(): Promise<ArmorySubPages> {
+  const [reputation, achievements, mounts] = await Promise.all(
+    ['reputation', 'achievements', 'mounts'].map((page) => armoryPage(`horizontally-blessed.${page}`)),
+  );
+  return { reputation, achievements, mounts };
+}
+
+/** A sub-page with its embedded state changed by `edit`. */
+async function editedPage(page: string, edit: (state: Record<string, any>) => void) {
+  const state = JSON.parse(await readFile(new URL(`./fixtures/horizontally-blessed.${page}.json`, import.meta.url), 'utf8'));
+  edit(state);
+  return `var characterProfileInitialState = ${JSON.stringify(state)};`;
+}
+
+describe('armory sub-pages to character summaries', () => {
+  it('reads every reputation standing as a tier, achievement counts for Dungeons and Raids, and mounts collected', async () => {
+    const { summaries, problems } = readSubPages(await subPages());
+    assert.deepEqual(summaries.reputation, [
+      { faction: 'Gadgetzan', standing: 'Neutral' },
+      { faction: 'Darnassus', standing: 'Honored' },
+      { faction: 'Gnomeregan Exiles', standing: 'Friendly' },
+      { faction: 'Ironforge', standing: 'Friendly' },
+      { faction: 'Stormwind', standing: 'Friendly' },
+    ]);
+    assert.deepEqual(summaries.achievements, { dungeons: 0, raids: 0 });
+    assert.equal(summaries.mounts, 0);
+    assert.deepEqual(problems, []);
+  });
+
+  it('reads counts above zero', async () => {
+    const pages = await subPages();
+    pages.achievements = await editedPage('achievements', (s) => {
+      for (const c of s.achievementIndex.categories) if (c.slug === 'dungeons') c.count = 2;
+    });
+    pages.mounts = await editedPage('mounts', (s) => { s.mounts.mountsCollected = 1; });
+    const { summaries } = readSubPages(pages);
+    assert.deepEqual(summaries.achievements, { dungeons: 2, raids: 0 });
+    assert.equal(summaries.mounts, 1);
+  });
+
+  it('stores the same summary when reputation only grows inside a tier, so the poll is not saved', async () => {
+    const before = readSubPages(await subPages()).summaries;
+    const pages = await subPages();
+    pages.reputation = await editedPage('reputation', (s) => {
+      for (const group of s.reputations.reputations) for (const r of group.reputations) r.value += 100;
+    });
+    assert.deepEqual(readSubPages(pages).summaries, before);
+  });
+
+  it('leaves a sub-page that failed to load as unknown, and reports it', async () => {
+    const pages: ArmorySubPages = { ...(await subPages()), mounts: new Error('armory 503') };
+    const { summaries, problems } = readSubPages(pages);
+    assert.equal(summaries.mounts, null);
+    assert.deepEqual(summaries.achievements, { dungeons: 0, raids: 0 });
+    assert.equal(summaries.reputation?.length, 5);
+    assert.deepEqual(problems, ['mounts: armory 503']);
+  });
+
+  it('leaves a garbled sub-page as unknown, and reports it', async () => {
+    const { summaries, problems } = readSubPages({
+      reputation: '<html>maintenance</html>',
+      achievements: await editedPage('achievements', (s) => { delete s.achievementIndex; }),
+      mounts: await editedPage('mounts', (s) => { s.mounts.mountsCollected = 'lots'; }),
+    });
+    assert.deepEqual(summaries, { reputation: null, achievements: null, mounts: null });
+    assert.equal(problems.length, 3);
+    assert.match(problems[0], /^reputation: /);
   });
 });

@@ -1,0 +1,164 @@
+{
+ "character": {
+  "avatar": {
+   "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-avatar.jpg"
+  },
+  "averageItemLevel": 9,
+  "class": {
+   "id": 11,
+   "name": "Druid",
+   "enum": "DRUID",
+   "slug": "druid"
+  },
+  "faction": {
+   "id": 0,
+   "name": "Alliance",
+   "enum": "ALLIANCE",
+   "slug": "alliance"
+  },
+  "gender": {
+   "id": 0,
+   "name": "Male",
+   "enum": "MALE",
+   "slug": "male"
+  },
+  "isRemix": false,
+  "lastUpdatedTimestamp": {
+   "epoch": 1794143512000,
+   "iso8601": "2026-11-08T13:11:52Z"
+  },
+  "level": 16,
+  "media": {
+   "main-sd-raw": {
+    "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-main-sd-raw.png"
+   },
+   "avatar-sd": {
+    "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-avatar-sd.jpg"
+   },
+   "main-raw": {
+    "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-main-raw.png"
+   },
+   "avatar": {
+    "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-avatar.jpg"
+   }
+  },
+  "name": "Horizontally",
+  "race": {
+   "id": 4,
+   "name": "Night Elf",
+   "enum": "NIGHTELF",
+   "slug": "night-elf"
+  },
+  "region": "eu",
+  "ruleset": {
+   "name": "PvP",
+   "rulesetId": 1,
+   "slug": "pvp"
+  },
+  "slug": "horizontally-blessed",
+  "surname": "Blessed",
+  "url": "/forever/eu/armory/character/horizontally-blessed/",
+  "achievementUrl": "/forever/eu/armory/character/horizontally-blessed/achievements",
+  "isOutdated": false,
+  "background": {
+   "url": "https://render.worldofwarcraft.com/profile-backgrounds/v2/armory_bg_race_night_elf.jpg",
+   "color": null
+  }
+ },
+ "reputations": {
+  "region": "eu",
+  "reputations": [
+   {
+    "id": "steamwheedle-cartel",
+    "max": false,
+    "name": "Steamwheedle Cartel",
+    "reputations": [
+     {
+      "id": "gadgetzan",
+      "max": false,
+      "maxValue": 3000,
+      "name": "Gadgetzan",
+      "standing": "Neutral",
+      "standingType": {
+       "id": 3,
+       "name": "Neutral",
+       "enum": "NEUTRAL",
+       "slug": "neutral"
+      },
+      "value": 600
+     }
+    ]
+   },
+   {
+    "id": "alliance",
+    "max": false,
+    "name": "Alliance",
+    "reputations": [
+     {
+      "id": "darnassus",
+      "max": false,
+      "maxValue": 12000,
+      "name": "Darnassus",
+      "standing": "Honored",
+      "standingType": {
+       "id": 5,
+       "name": "Honored",
+       "enum": "HONORED",
+       "slug": "honored"
+      },
+      "value": 1757
+     },
+     {
+      "id": "gnomeregan-exiles",
+      "max": false,
+      "maxValue": 6000,
+      "name": "Gnomeregan Exiles",
+      "standing": "Friendly",
+      "standingType": {
+       "id": 4,
+       "name": "Friendly",
+       "enum": "FRIENDLY",
+       "slug": "friendly"
+      },
+      "value": 1320
+     },
+     {
+      "id": "ironforge",
+      "max": false,
+      "maxValue": 6000,
+      "name": "Ironforge",
+      "standing": "Friendly",
+      "standingType": {
+       "id": 4,
+       "name": "Friendly",
+       "enum": "FRIENDLY",
+       "slug": "friendly"
+      },
+      "value": 1307
+     },
+     {
+      "id": "stormwind",
+      "max": false,
+      "maxValue": 6000,
+      "name": "Stormwind",
+      "standing": "Friendly",
+      "standingType": {
+       "id": 4,
+       "name": "Friendly",
+       "enum": "FRIENDLY",
+       "slug": "friendly"
+      },
+      "value": 682
+     }
+    ]
+   }
+  ]
+ },
+ "supportedArmoryTabs": [
+  "character",
+  "professions",
+  "collections",
+  "pvp",
+  "reputation"
+ ]
+}

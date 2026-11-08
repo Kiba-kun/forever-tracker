@@ -461,3 +461,152 @@ describe('Dungeon suggestions', () => {
     assert.deepEqual(caverns.map((d) => [d.faction, d.mains.map((m) => m.player)]), [['ALLIANCE', ['Andrii', 'Vlad']], ['HORDE', ['Max', 'Roman']]]);
   });
 });
+
+describe('Milestones from reputation, achievements and mounts', () => {
+  const texts = (data: ReturnType<typeof buildDashboard>) => data.milestones.map((m) => m.text);
+  type Rep = NonNullable<CharacterState['reputation']>;
+  const rep = (standings: Record<string, Rep[number]['standing']>): Rep =>
+    Object.entries(standings).map(([faction, standing]) => ({ faction, standing }));
+
+  it('marks a reputation rising to Honored, Revered or Exalted, after a quiet Baseline', () => {
+    const lev = (reputation?: Rep | null) => main('Horizontally Blessed', 30, reputation === undefined ? {} : { reputation });
+    const data = buildDashboard(
+      [
+        snapshot(T0, [lev()]), // before the poller read reputation: unknown
+        snapshot(T0 + HOUR, [lev(rep({ Ironforge: 'Friendly', Darnassus: 'Honored', Gadgetzan: 'Neutral' }))]), // Baseline
+        snapshot(T0 + 2 * HOUR, [lev(rep({ Ironforge: 'Honored', Darnassus: 'Honored', Gadgetzan: 'Friendly' }))]),
+        snapshot(T0 + 3 * HOUR, [lev(null)]), // sub-page failed: nothing
+        snapshot(T0 + 4 * HOUR, [lev(rep({ Ironforge: 'Honored', Darnassus: 'Exalted', Gadgetzan: 'Friendly' }))]), // two tiers between polls
+      ],
+      roster,
+    );
+    assert.deepEqual(texts(data), [
+      'Andrii reached Exalted with Darnassus',
+      'Andrii reached Revered with Darnassus',
+      'Andrii reached Honored with Ironforge',
+    ]);
+    assert.deepEqual(data.milestones.at(-1), {
+      at: T0 + 2 * HOUR, kind: 'reputation', player: 'Andrii', character: 'Horizontally Blessed',
+      faction: 'Ironforge', standing: 'Honored', text: 'Andrii reached Honored with Ironforge',
+    });
+  });
+
+  it('stays quiet when a standing lost is regained, and marks a faction first met already at Honored', () => {
+    const lev = (standings: Record<string, Rep[number]['standing']>) => main('Horizontally Blessed', 30, { reputation: rep(standings) });
+    const data = buildDashboard(
+      [
+        snapshot(T0, [lev({ Ironforge: 'Honored' })]),
+        snapshot(T0 + HOUR, [lev({ Ironforge: 'Friendly' })]),
+        snapshot(T0 + 2 * HOUR, [lev({ Ironforge: 'Honored', 'Argent Dawn': 'Honored' })]),
+      ],
+      roster,
+    );
+    assert.deepEqual(texts(data), ['Andrii reached Honored with Argent Dawn']);
+  });
+
+  it('starts a rerolled Main\'s reputation from a Baseline', () => {
+    const data = buildDashboard(
+      [
+        snapshot(T0, [main('Wheredem Hosat', 30, { reputation: rep({ Stormwind: 'Friendly' }) })]),
+        snapshot(T0 + HOUR, [main('Fresh Start', 5, { player: 'Max', reputation: rep({ Stormwind: 'Honored', Darnassus: 'Revered' }) })]),
+        snapshot(T0 + 2 * HOUR, [main('Fresh Start', 6, { player: 'Max', reputation: rep({ Stormwind: 'Honored', Darnassus: 'Revered' }) })]),
+      ],
+      afterMaxRerolls,
+    );
+    assert.deepEqual(texts(data), []);
+  });
+
+  it('marks a Main\'s first dungeon achievement, first raid achievement and first mount, after a quiet Baseline', () => {
+    const vlad = (extra: Partial<CharacterState>) => main('Ignatius Perdun', 40, extra);
+    const data = buildDashboard(
+      [
+        snapshot(T0, [vlad({})]), // not read yet: unknown
+        snapshot(T0 + HOUR, [vlad({ achievements: { dungeons: 0, raids: 0 }, mounts: 0 })]), // Baseline
+        snapshot(T0 + 2 * HOUR, [vlad({ achievements: null, mounts: null })]), // sub-pages failed: nothing
+        snapshot(T0 + 3 * HOUR, [vlad({ achievements: { dungeons: 2, raids: 0 }, mounts: 1 })]),
+        snapshot(T0 + 4 * HOUR, [vlad({ achievements: { dungeons: 3, raids: 1 }, mounts: 2 })]), // more dungeons and mounts: quiet
+      ],
+      roster,
+    );
+    assert.deepEqual(data.milestones.filter((m) => 'player' in m).map((m) => [m.at, m.kind, m.text]), [
+      [T0 + 4 * HOUR, 'raid-achievement', 'Vlad earned their first raid achievement'],
+      [T0 + 3 * HOUR, 'mount', 'Vlad got their first mount'],
+      [T0 + 3 * HOUR, 'dungeon-achievement', 'Vlad earned their first dungeon achievement'],
+    ]);
+  });
+
+  it('announces no first a Main already had at its Baseline', () => {
+    const vlad = (dungeons: number) => main('Ignatius Perdun', 40, { achievements: { dungeons, raids: 1 }, mounts: 1 });
+    const data = buildDashboard([snapshot(T0, [vlad(1)]), snapshot(T0 + HOUR, [vlad(2)])], roster);
+    assert.deepEqual(texts(data), []);
+  });
+
+  it('starts a rerolled Main\'s firsts from a Baseline', () => {
+    const data = buildDashboard(
+      [
+        snapshot(T0, [main('Wheredem Hosat', 45, { achievements: { dungeons: 4, raids: 0 }, mounts: 1 })]),
+        snapshot(T0 + HOUR, [main('Fresh Start', 5, { player: 'Max', achievements: { dungeons: 0, raids: 0 }, mounts: 0 })]),
+        snapshot(T0 + 2 * HOUR, [main('Fresh Start', 9, { player: 'Max', achievements: { dungeons: 1, raids: 0 }, mounts: 0 })]),
+      ],
+      afterMaxRerolls,
+    );
+    assert.deepEqual(data.milestones.filter((m) => 'player' in m).map((m) => m.text), ['Max earned their first dungeon achievement']);
+  });
+
+  const everyone = (andrii: Partial<CharacterState>, vlad: Partial<CharacterState>, max: Partial<CharacterState>) => [
+    main('Horizontally Blessed', 40, andrii), main('Ignatius Perdun', 40, vlad), main('Wheredem Hosat', 40, max),
+  ];
+  const noDungeons = { achievements: { dungeons: 0, raids: 0 } };
+  const groupTexts = (data: ReturnType<typeof buildDashboard>) => data.milestones.filter((m) => !('player' in m)).map((m) => m.text);
+
+  it('marks the Group\'s first dungeon achievement once, when the first Main earns one', () => {
+    const data = buildDashboard(
+      [
+        snapshot(T0, everyone(noDungeons, noDungeons, {})), // Max's achievements unknown: can't tell yet
+        snapshot(T0 + HOUR, everyone(noDungeons, noDungeons, noDungeons)), // Baseline: nobody has one
+        snapshot(T0 + 2 * HOUR, everyone(noDungeons, { achievements: { dungeons: 1, raids: 0 } }, { achievements: null })),
+        snapshot(T0 + 3 * HOUR, everyone({ achievements: { dungeons: 1, raids: 0 } }, { achievements: { dungeons: 1, raids: 0 } }, noDungeons)),
+      ],
+      roster,
+    );
+    assert.deepEqual(data.milestones.filter((m) => m.kind === 'group-dungeon-achievement'), [
+      { at: T0 + 2 * HOUR, kind: 'group-dungeon-achievement', text: 'The Group earned its first dungeon achievement' },
+    ]);
+    assert.deepEqual(data.journeyMarkers.map((m) => m.text), ['The Group earned its first dungeon achievement']);
+  });
+
+  it('treats a Group first dungeon achievement already earned when tracking started as a Baseline', () => {
+    const data = buildDashboard(
+      [
+        snapshot(T0, everyone(noDungeons, { achievements: { dungeons: 2, raids: 0 } }, noDungeons)),
+        snapshot(T0 + HOUR, everyone({ achievements: { dungeons: 1, raids: 0 } }, { achievements: { dungeons: 2, raids: 0 } }, noDungeons)),
+      ],
+      roster,
+    );
+    assert.deepEqual(groupTexts(data), []);
+  });
+
+  it('marks every Main having a mount, judged only once every Main\'s mounts are known', () => {
+    const data = buildDashboard(
+      [
+        snapshot(T0, everyone({ mounts: 1 }, { mounts: 0 }, {})), // Max unknown: can't tell
+        snapshot(T0 + HOUR, everyone({ mounts: 1 }, { mounts: 1 }, { mounts: null })), // still unknown
+        snapshot(T0 + 2 * HOUR, everyone({ mounts: 1 }, { mounts: 1 }, { mounts: 0 })), // Baseline: not everyone
+        snapshot(T0 + 3 * HOUR, everyone({ mounts: 1 }, { mounts: 1 }, { mounts: 1 })),
+        snapshot(T0 + 4 * HOUR, everyone({ mounts: 2 }, { mounts: 1 }, { mounts: 1 })),
+      ],
+      roster,
+    );
+    assert.deepEqual(data.milestones.filter((m) => m.kind === 'group-mounted'), [
+      { at: T0 + 3 * HOUR, kind: 'group-mounted', text: 'Every Main in the Group has a mount' },
+    ]);
+  });
+
+  it('treats every Main already having a mount when tracking started as a Baseline', () => {
+    const data = buildDashboard(
+      [snapshot(T0, everyone({ mounts: 1 }, { mounts: 1 }, { mounts: 1 })), snapshot(T0 + HOUR, everyone({ mounts: 2 }, { mounts: 1 }, { mounts: 1 }))],
+      roster,
+    );
+    assert.deepEqual(groupTexts(data), []);
+  });
+});

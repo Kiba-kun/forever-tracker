@@ -1,0 +1,142 @@
+{
+ "character": {
+  "avatar": {
+   "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-avatar.jpg"
+  },
+  "averageItemLevel": 9,
+  "class": {
+   "id": 11,
+   "name": "Druid",
+   "enum": "DRUID",
+   "slug": "druid"
+  },
+  "faction": {
+   "id": 0,
+   "name": "Alliance",
+   "enum": "ALLIANCE",
+   "slug": "alliance"
+  },
+  "gender": {
+   "id": 0,
+   "name": "Male",
+   "enum": "MALE",
+   "slug": "male"
+  },
+  "isRemix": false,
+  "lastUpdatedTimestamp": {
+   "epoch": 1794143512000,
+   "iso8601": "2026-11-08T13:11:52Z"
+  },
+  "level": 16,
+  "media": {
+   "main-sd-raw": {
+    "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-main-sd-raw.png"
+   },
+   "avatar-sd": {
+    "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-avatar-sd.jpg"
+   },
+   "main-raw": {
+    "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-main-raw.png"
+   },
+   "avatar": {
+    "url": "https://render.worldofwarcraft.com/forever-eu/character/93/6879837-avatar.jpg"
+   }
+  },
+  "name": "Horizontally",
+  "race": {
+   "id": 4,
+   "name": "Night Elf",
+   "enum": "NIGHTELF",
+   "slug": "night-elf"
+  },
+  "region": "eu",
+  "ruleset": {
+   "name": "PvP",
+   "rulesetId": 1,
+   "slug": "pvp"
+  },
+  "slug": "horizontally-blessed",
+  "surname": "Blessed",
+  "url": "/forever/eu/armory/character/horizontally-blessed/",
+  "achievementUrl": "/forever/eu/armory/character/horizontally-blessed/achievements",
+  "isOutdated": false,
+  "background": {
+   "url": "https://render.worldofwarcraft.com/profile-backgrounds/v2/armory_bg_race_night_elf.jpg",
+   "color": null
+  }
+ },
+ "achievementIndex": {
+  "categories": [
+   {
+    "count": 0,
+    "name": "Classes",
+    "points": 0,
+    "slug": "classes",
+    "total": 54,
+    "totalPoints": 0,
+    "url": "classes"
+   },
+   {
+    "count": 0,
+    "name": "Tradeskills",
+    "points": 0,
+    "slug": "tradeskills",
+    "total": 36,
+    "totalPoints": 0,
+    "url": "tradeskills"
+   },
+   {
+    "count": 0,
+    "name": "Dungeons",
+    "points": 0,
+    "slug": "dungeons",
+    "total": 6,
+    "totalPoints": 0,
+    "url": "dungeons"
+   },
+   {
+    "count": 0,
+    "name": "Raids",
+    "points": 0,
+    "slug": "raids",
+    "total": 6,
+    "totalPoints": 2,
+    "url": "raids"
+   },
+   {
+    "count": 0,
+    "name": "Player vs. Player",
+    "points": 0,
+    "slug": "player-vs-player",
+    "total": 24,
+    "totalPoints": 0,
+    "url": "player-vs-player"
+   },
+   {
+    "count": 2,
+    "name": "Adventure",
+    "points": 0,
+    "slug": "adventure",
+    "total": 50,
+    "totalPoints": 0,
+    "url": "adventure"
+   },
+   {
+    "count": 0,
+    "name": "Do Not Display",
+    "points": 0,
+    "slug": "do-not-display",
+    "total": 0,
+    "totalPoints": 0,
+    "url": "do-not-display"
+   }
+  ]
+ },
+ "supportedArmoryTabs": [
+  "character",
+  "professions",
+  "collections",
+  "pvp",
+  "reputation"
+ ]
+}
