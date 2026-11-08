@@ -58,8 +58,8 @@ interface MainState {
   professionCaps: Map<string, number> | undefined;
   /** Best gear quality ever equipped: "first Rare" means first ever, so swapping a Rare out and back is quiet. */
   bestGear: GearQuality | undefined;
-  /** Last known honor rank. */
-  honorRank: number | undefined;
+  /** Highest honor rank ever reached: a rank lost to weekly decay and regained is not marked again. */
+  bestHonorRank: number | undefined;
 }
 
 /**
@@ -158,7 +158,7 @@ function remember(before: MainState | undefined, now: CharacterState): MainState
     spec: now.spec === undefined || (now.spec === null && before?.spec) ? before?.spec : now.spec,
     professionCaps,
     bestGear: betterGear(before?.bestGear, now.gearQuality),
-    honorRank: now.honorRank ?? before?.honorRank,
+    bestHonorRank: now.honorRank == null ? before?.bestHonorRank : Math.max(now.honorRank, before?.bestHonorRank ?? 0),
   };
 }
 
@@ -195,8 +195,8 @@ function personalMilestones(at: number, player: string, before: MainState, now: 
     }
   }
 
-  if (before.honorRank !== undefined && now.honorRank != null) {
-    for (let rank = before.honorRank + 1; rank <= now.honorRank; rank++) {
+  if (before.bestHonorRank !== undefined && now.honorRank != null) {
+    for (let rank = before.bestHonorRank + 1; rank <= now.honorRank; rank++) {
       found.push({ ...who, kind: 'honor-rank', rank, text: `${player} reached honor rank ${rank}` });
     }
   }

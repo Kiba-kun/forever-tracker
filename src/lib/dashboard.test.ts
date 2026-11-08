@@ -391,10 +391,13 @@ describe('Milestones', () => {
     assert.deepEqual(texts(data), ['Andrii reached honor rank 2', 'Andrii reached honor rank 1']);
   });
 
-  it('marks an honor rank again when it is regained after decaying, since it is compared with the last known rank', () => {
+  it('stays quiet when an honor rank lost to decay is regained, and marks only ranks never reached before', () => {
     const andrii = (honorRank: number) => main('Horizontally Blessed', 40, { honorRank });
-    const data = buildDashboard([snapshot(T0, [andrii(4)]), snapshot(T0 + HOUR, [andrii(3)]), snapshot(T0 + 2 * HOUR, [andrii(4)])], roster);
-    assert.deepEqual(texts(data), ['Andrii reached honor rank 4']);
+    const data = buildDashboard(
+      [snapshot(T0, [andrii(4)]), snapshot(T0 + HOUR, [andrii(3)]), snapshot(T0 + 2 * HOUR, [andrii(4)]), snapshot(T0 + 3 * HOUR, [andrii(5)])],
+      roster,
+    );
+    assert.deepEqual(texts(data), ['Andrii reached honor rank 5']);
   });
 
   it('starts a rerolled Main\'s gear and honor rank from a Baseline', () => {

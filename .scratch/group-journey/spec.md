@@ -167,7 +167,7 @@ A Milestone is `{ at, kind, player?, character?, text-ready data }`:
 - A reputation standing rises to Honored, Revered or Exalted.
 - A profession's skill cap (`max`) reaches the Journeyman, Expert or Artisan tier.
 - Dungeon achievement count goes from 0 to more than 0; same for raids.
-- Honor rank increases.
+- Honor rank rises above the highest rank the Main has reached before. A rank lost to weekly decay and regained is not a Milestone again.
 
 **Group Milestones:**
 - Levels earned together crosses a multiple of 100.
