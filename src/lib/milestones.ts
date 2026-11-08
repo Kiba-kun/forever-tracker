@@ -187,6 +187,8 @@ export interface RecordedMilestone {
   player: string;
   kind: 'gear';
   quality: (typeof GEAR_FIRSTS)[number];
+  /** The items that earned it, when written down. */
+  items?: EquippedItem[];
 }
 
 /**
@@ -201,6 +203,7 @@ export function withRecorded(milestones: Milestone[], recorded: RecordedMileston
     return {
       at: Date.UTC(y, m - 1, d, 12), day: r.day, kind: r.kind, player: r.player, character: main.name,
       quality: r.quality, text: `${r.player} equipped their first ${r.quality} item`,
+      ...(r.items?.length ? { items: r.items } : {}),
     };
   });
   const isRecorded = (m: Milestone) =>

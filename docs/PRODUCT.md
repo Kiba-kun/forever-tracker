@@ -44,7 +44,7 @@ The armory shows only current state and keeps no history. So Milestones are noti
   - level 10, 20, 30, 40, 50 and 60
   - talent spec chosen or changed
   - riding mount, named in its Quality colour
-  - first Rare and first Epic item, naming the items with links to Wowhead (Milestones recorded by hand stay unnamed)
+  - first Rare and first Epic item, naming the items with links to Wowhead (a Milestone recorded by hand names its items when they're written down with it)
   - reputation tier up (Honored, Revered, Exalted)
   - profession tier (Journeyman, Expert, Artisan)
   - first dungeon or raid achievement

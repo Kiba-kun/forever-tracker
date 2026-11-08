@@ -1,9 +1,29 @@
 {
-  "_comment": "Milestones from before the tracker could see them: their first sighting was a quiet Baseline, so they're written down here by hand. 'day' is YYYY-MM-DD; 'player' must have a Main in roster.json. Only first Rare/Epic items ('kind': 'gear') for now.",
+  "_comment": "Milestones from before the tracker could see them: their first sighting was a quiet Baseline, so they're written down here by hand. 'day' is YYYY-MM-DD; 'player' must have a Main in roster.json. Only first Rare/Epic items ('kind': 'gear') for now. 'items' (optional) names the items of that Quality, as the armory shows them: id, name, quality, icon.",
   "milestones": [
-    { "day": "2026-11-07", "player": "Andrii", "kind": "gear", "quality": "Rare" },
-    { "day": "2026-11-07", "player": "Vlad", "kind": "gear", "quality": "Rare" },
-    { "day": "2026-11-07", "player": "Roman", "kind": "gear", "quality": "Rare" },
-    { "day": "2026-11-07", "player": "Pavlo", "kind": "gear", "quality": "Rare" }
+    {"day": "2026-11-07", "player": "Andrii", "kind": "gear", "quality": "Rare",
+      "items": [
+        {"id": 252425, "name": "Dark Leather Boots", "quality": "Rare", "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132539.jpg"},
+        {"id": 270260, "name": "Direhammer Leggings", "quality": "Rare", "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134586.jpg"},
+        {"id": 279895, "name": "Ironforge Greathammer", "quality": "Rare", "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133058.jpg"}
+      ]
+    },
+    {"day": "2026-11-07", "player": "Vlad", "kind": "gear", "quality": "Rare",
+      "items": [
+        {"id": 279896, "name": "Deepblaze", "quality": "Rare", "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135473.jpg"}
+      ]
+    },
+    {"day": "2026-11-07", "player": "Roman", "kind": "gear", "quality": "Rare",
+      "items": [
+        {"id": 270227, "name": "Ephemeral Choker", "quality": "Rare", "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/466975.jpg"},
+        {"id": 279896, "name": "Deepblaze", "quality": "Rare", "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135473.jpg"},
+        {"id": 270228, "name": "Golemheart Stave", "quality": "Rare", "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135155.jpg"}
+      ]
+    },
+    {"day": "2026-11-07", "player": "Pavlo", "kind": "gear", "quality": "Rare",
+      "items": [
+        {"id": 270231, "name": "Flamefist Grips", "quality": "Rare", "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132959.jpg"}
+      ]
+    }
   ]
 }

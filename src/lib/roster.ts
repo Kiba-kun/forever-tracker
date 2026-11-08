@@ -17,6 +17,12 @@ if (unnamed.length) {
 export const recordedMilestones: RecordedMilestone[] = recordedFile.milestones as RecordedMilestone[];
 
 const badRecord = recordedMilestones.find(
-  (m) => !/^\d{4}-\d{2}-\d{2}$/.test(m.day) || !roster.some((r) => r.player === m.player) || m.kind !== 'gear' || !['Rare', 'Epic'].includes(m.quality),
+  (m) =>
+    !/^\d{4}-\d{2}-\d{2}$/.test(m.day) ||
+    !roster.some((r) => r.player === m.player) ||
+    m.kind !== 'gear' ||
+    !['Rare', 'Epic'].includes(m.quality) ||
+    // Items, when written down, are of the Milestone's own Quality.
+    (m.items !== undefined && !m.items.every((i) => Number.isInteger(i.id) && typeof i.name === 'string' && i.quality === m.quality)),
 );
 if (badRecord) throw new Error(`config/recorded-milestones.json: can't read ${JSON.stringify(badRecord)}`);

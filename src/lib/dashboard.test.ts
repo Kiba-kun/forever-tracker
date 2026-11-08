@@ -672,6 +672,17 @@ describe('Recorded Milestones: moments from before the tracker could see them', 
     });
   });
 
+  it('names the items a recorded first was written down with', () => {
+    const wand: EquippedItem = { id: 279896, name: 'Deepblaze', quality: 'Rare', icon: 'https://render.example/135473.jpg' };
+    const data = buildDashboard(
+      [snapshot(T0, [main('Ignatius Perdun', 14, { gearQuality: 'Rare' })])],
+      roster,
+      [{ ...rare('Vlad', '2026-11-07'), items: [wand] }],
+    );
+    const gear = data.milestones.find((m) => m.kind === 'gear');
+    assert.deepEqual(gear?.kind === 'gear' && gear.items, [wand]);
+  });
+
   it('does not announce a recorded first again when the snapshots also show it happening', () => {
     const andrii = (gearQuality: CharacterState['gearQuality']) => main('Horizontally Blessed', 20, { gearQuality });
     const data = buildDashboard(
