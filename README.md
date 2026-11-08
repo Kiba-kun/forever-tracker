@@ -1,6 +1,8 @@
 # Forever Tracker
 
-Level-progress dashboard for our WoW Forever group (Next.js + Recharts).
+A shared record of our WoW Forever group's journey (Next.js + Recharts).
+
+Read [docs/PRODUCT.md](docs/PRODUCT.md) for the product principles (no ranking between players) and MVP scope, and [CONTEXT.md](CONTEXT.md) for the domain terms.
 
 ## Setup
 

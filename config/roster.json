@@ -1,11 +1,11 @@
 {
-  "_comment": "Our group. 'name' is the Forever 'First Last' name; the armory slug is the lower-cased, dash-joined name (worldofwarcraft.blizzard.com/en-us/forever/eu/armory/character/<slug>). 'player' is an optional nickname shown on the dashboard.",
+  "_comment": "Our group. 'name' is the Forever 'First Last' name; the armory slug is the lower-cased, dash-joined name (worldofwarcraft.blizzard.com/en-us/forever/eu/armory/character/<slug>). 'player' is the real person this Main belongs to (required).",
   "characters": [
     { "name": "Horizontally Blessed", "player": "Andrii", "ruleset": "pvp" },
-    { "name": "Ignatius Perdun", "ruleset": "pvp" },
-    { "name": "Zhyvchyk Zero", "ruleset": "pvp" },
-    { "name": "Dr Higer", "ruleset": "pvp" },
-    { "name": "Síx Sèvèn", "ruleset": "pvp" },
-    { "name": "Wheredem Hosat", "ruleset": "pvp" }
+    { "name": "Ignatius Perdun", "player": "Vlad", "ruleset": "pvp" },
+    { "name": "Zhyvchyk Zero", "player": "Roman", "ruleset": "pvp" },
+    { "name": "Dr Higer", "player": "Lev", "ruleset": "pvp" },
+    { "name": "Síx Sèvèn", "player": "Pavlo", "ruleset": "pvp" },
+    { "name": "Wheredem Hosat", "player": "Max", "ruleset": "pvp" }
   ]
 }
