@@ -2,7 +2,7 @@ name: Poll armory & deploy
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # GitHub may run scheduled jobs a few minutes late
+    - cron: '0 */1 * * *' # GitHub may run scheduled jobs a few minutes late
   push:
     branches: [main]
   workflow_dispatch:
