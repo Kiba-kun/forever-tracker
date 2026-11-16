@@ -15,6 +15,7 @@ These rules hold for every feature. A change that breaks one needs an explicit d
    - Showing levels side by side is fine. Ordering, crowns and "who's grinding" language are not.
 3. **No numbers that invite comparison.** Leave out item level, honorable kill counts and stats.
    - The tracker never shows these itself. Hovering an item may show Wowhead's tooltip for that one item, because it describes the item, not a Player. (Amended 2026-11-08 for the WoW-style redesign.)
+   - Exception: each party frame shows its Main's GearScore, worked out from the equipped items' item level, Quality and slot (`src/lib/gearscore.ts`). Mains are still never sorted, ranked or compared by it. (Amended 2026-11-16.)
 4. **The Journey has no finish line.** Reaching 60 closes a Chapter, not the Journey. Nobody is "done" while others are still playing.
 5. **People, not characters.** Every Main belongs to a named Player, and the page shows the Player first. Alts are not followed. A Player who rerolls switches Main and keeps their history.
 
@@ -34,7 +35,7 @@ The page, top to bottom, in the WoW Classic look: dark stone-and-gold windows, C
 - **The Journey chart.** One Group line of levels earned together over time, with Group Milestones marked. There are no per-Player lines.
 - **Journey log.** Milestones in time order like a WoW chat window, newest at the bottom, with Personal and Group Milestones mixed together and dated. It opens on the newest lines and scrolls back to the first.
 - **Dungeon suggestions.** Every original-era dungeon whose recommended level range currently includes at least two Mains, with who fits. Uses a fixed table of dungeon level ranges.
-- **The Group.** One party frame per Main in roster order, with Player, Character, class and spec, level, professions and last seen. No rank and no item level.
+- **The Group.** One party frame per Main in roster order, with Player, Character, class and spec, level, GearScore, professions and last seen. No rank and no average item level.
 
 ### Milestones
 
@@ -57,7 +58,7 @@ The armory shows only current state and keeps no history. So Milestones are noti
 
 ### Data the armory provides (checked 2026-11-08)
 
-- **Available:** level, talents, gear per slot with quality, reputation standings, achievement counts per category, mounts and pets, honor rank, professions.
+- **Available:** level, talents, gear per slot with quality and item level, reputation standings, achievement counts per category, mounts and pets, honor rank, professions.
 - **Not available:** XP within a level, quests, current zone, deaths, played time, the names or dates of individual achievements.
 - A character's armory data refreshes only when they log out.
 

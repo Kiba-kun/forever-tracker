@@ -34,7 +34,7 @@ describe('armory main page to character state', () => {
     assert.equal(state.honorRank, 0);
   });
 
-  it('keeps every equipped item with its id, name, Quality, icon and bonus list', async () => {
+  it('keeps every equipped item with its id, name, Quality, icon, bonus list, item level and slot', async () => {
     const state = armoryToState(andrii, parseArmoryPage(await armoryPage('horizontally-blessed')));
     assert.equal(state.gear?.length, 8);
     assert.deepEqual(state.gear?.find((i) => i.id === 9779), {
@@ -43,12 +43,16 @@ describe('armory main page to character state', () => {
       quality: 'Uncommon',
       icon: 'https://render.worldofwarcraft.com/forever-eu/icons/56/133771.jpg',
       bonus: [12731],
+      itemLevel: 18,
+      slot: 'CLOAK',
     });
     assert.deepEqual(state.gear?.find((i) => i.id === 279895), {
       id: 279895,
       name: 'Ironforge Greathammer',
       quality: 'Rare',
       icon: 'https://render.worldofwarcraft.com/forever-eu/icons/56/133058.jpg',
+      itemLevel: 18,
+      slot: 'TWOHWEAPON',
     });
   });
 

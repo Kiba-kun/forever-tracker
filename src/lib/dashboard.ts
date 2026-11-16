@@ -1,6 +1,7 @@
 // Turns snapshot history into the view model the dashboard renders.
 // The Group is the hero: nothing here ranks Players (see docs/PRODUCT.md).
 
+import { gearScore } from './gearscore.ts';
 import { dungeonSuggestions, type DungeonSuggestion } from './dungeons.ts';
 import { journeyMarkers, milestonesOver, withRecorded, type JourneyPoint, type Milestone, type RecordedMilestone } from './milestones.ts';
 import { fractionalLevel, type CharacterState, type RosterEntry, type Snapshot } from './model.ts';
@@ -15,7 +16,8 @@ export interface DashboardData {
   updatedAt: number | null;
   errors: Snapshot['errors'];
   /** Mains in roster order, each with its Player. */
-  characters: (CharacterState & { player: string })[];
+  /** `gearScore`: see gearscore.ts; `null` when it can't be told from this snapshot. */
+  characters: (CharacterState & { player: string; gearScore: number | null })[];
   /** Levels earned together: every level the Group's Mains gained since level 1. */
   levelsTogether: number;
   /** The next Group Milestone in Levels earned together, and how many levels are left to reach it. */
@@ -58,7 +60,7 @@ export function buildDashboard(snapshots: Snapshot[], roster: RosterEntry[], rec
     .map((c) => ({ c, slot: roster.findIndex((r) => r.name === c.name) }))
     .filter(({ slot }) => slot !== -1)
     .sort((a, b) => a.slot - b.slot)
-    .map(({ c, slot }) => ({ ...c, player: roster[slot].player }));
+    .map(({ c, slot }) => ({ ...c, player: roster[slot].player, gearScore: gearScore(c.gear, c.className) }));
 
   // Compare with the newest snapshot that is at least 24h older than the latest.
   const cutoff = latest.takenAt - DAY;

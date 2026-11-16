@@ -40,6 +40,10 @@ export interface EquippedItem {
   /** Blizzard-hosted icon URL, shown from its own address. */
   icon: string | null;
   bonus?: number[];
+  /** Item level. Missing: read before the tracker stored it. */
+  itemLevel?: number;
+  /** The armory's inventory type, e.g. 'CLOAK' or 'TWOHWEAPON'. Missing: read before the tracker stored it. */
+  slot?: string;
 }
 
 /** A mount a Main has collected. Wowhead needs a spell id we don't have, so mounts get no link. */

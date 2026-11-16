@@ -31,6 +31,8 @@ interface ArmoryItem {
   quality?: { type: string };
   media?: { content?: { assets?: { key: string; value: string }[] } };
   bonus_list?: number[];
+  level?: { value: number };
+  inventory_type?: { type: string };
 }
 
 /** The subset of the armory page's character object we use. */
@@ -150,7 +152,15 @@ function equippedItems(gear: Record<string, ArmoryItem>): EquippedItem[] {
     const quality = fromEnum(GEAR_QUALITIES, it.quality?.type);
     if (!it.item?.id || !it.name || !quality) return [];
     const icon = it.media?.content?.assets?.find((a) => a.key === 'icon')?.value ?? null;
-    return [{ id: it.item.id, name: it.name, quality, icon, ...(it.bonus_list?.length ? { bonus: it.bonus_list } : {}) }];
+    return [{
+      id: it.item.id,
+      name: it.name,
+      quality,
+      icon,
+      ...(it.bonus_list?.length ? { bonus: it.bonus_list } : {}),
+      ...(typeof it.level?.value === 'number' ? { itemLevel: it.level.value } : {}),
+      ...(it.inventory_type?.type ? { slot: it.inventory_type.type } : {}),
+    }];
   });
 }
 

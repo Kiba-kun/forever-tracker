@@ -8,7 +8,8 @@ const PROFESSION_MAX = 300;
 const pctOf = (n: number) => `${(Math.min(n, PROFESSION_MAX) / PROFESSION_MAX) * 100}%`;
 
 /**
- * The Group as party frames, one per Main in roster order, Player first. Never sorted or ranked (docs/PRODUCT.md).
+ * The Group as party frames, one per Main in roster order, Player first. Never sorted or ranked (docs/PRODUCT.md),
+ * even though each frame shows its Main's GearScore.
  */
 export function PartyFrames({ characters }: { characters: DashboardData['characters'] }) {
   return (
@@ -25,6 +26,11 @@ export function PartyFrames({ characters }: { characters: DashboardData['charact
                 <div className="player">{c.player}</div>
                 <div className="character"><CharacterName name={c.name} className={c.className} />{c.isGhost && ' 👻'}</div>
                 <div className="class">{c.spec ? `${c.spec} ${c.className}` : c.className}</div>
+                {c.gearScore != null && (
+                  <div className="gearscore" title="GearScore: the sum of every equipped item's score from its item level, Quality and slot">
+                    GearScore <span>{c.gearScore}</span>
+                  </div>
+                )}
               </div>
               <div className="seen"><LocalTime ts={c.lastLogin} mode="ago" /></div>
             </div>

@@ -139,6 +139,8 @@ a.game-link:hover { text-decoration: underline; }
 .unit .player { color: var(--bright); font-size: 16px; }
 .unit .character { font-size: 14px; }
 .unit .class { color: var(--text-muted); font-size: 13px; }
+.unit .gearscore { color: var(--text-faint); font-size: 12px; }
+.unit .gearscore span { color: var(--bright); }
 .unit .seen { position: absolute; top: 0; right: 0; color: var(--text-faint); font-size: 12px; }
 .unit .professions { margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
 .profession { display: grid; grid-template-columns: 92px 1fr; gap: 6px; align-items: center; font-size: 13px; }
