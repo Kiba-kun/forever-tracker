@@ -45,18 +45,13 @@ jobs:
           git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-  deploy:
+  build:
     needs: poll
     # Rebuild only when there is new data, or on code/roster pushes and manual runs.
     if: needs.poll.outputs.changed == 'true' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -74,5 +69,18 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with:
           path: out
+
+  # Separate job so the uploaded artifact is visible to the API before
+  # deploy-pages looks it up (same-job lookups race and fail intermittently).
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
